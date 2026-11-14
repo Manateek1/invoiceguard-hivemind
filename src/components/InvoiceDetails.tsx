@@ -60,7 +60,7 @@ export function InvoiceDetails({ invoice, onPrepareDraft }: { invoice: InvoiceAu
         {showPriceRequest && <div className="price-request-preview">
           <label htmlFor="price-request-draft">Message draft</label>
           <textarea id="price-request-draft" value={priceRequest} readOnly rows={7} />
-          <small>Review and edit before sending. InvoiceGuard has not contacted the vendor.</small>
+          <small>Review and edit before sending. Oalgo AI has not contacted the vendor.</small>
         </div>}
       </div>
     </section>}
