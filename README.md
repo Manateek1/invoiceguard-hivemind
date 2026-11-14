@@ -1,6 +1,6 @@
-# Oalgo AI · InvoiceGuard
+# oalgo ai · InvoiceGuard
 
-Oalgo AI is the demo shell for InvoiceGuard, a small-business accounts-payable review MVP. The landing page is `/`; the product demo is `/demo`. Review invoices against vendor history, purchase orders, and budgets, inspect the evidence graph, and prepare a payment draft for a human approver. The app never submits a payment.
+oalgo ai is the demo shell for InvoiceGuard, a small-business accounts-payable review MVP. The landing page is `/`; the product demo is `/demo`. Review invoices against vendor history, purchase orders, and budgets, inspect the evidence graph, and prepare a payment draft for a human approver. The app never submits a payment.
 
 ## Run the demo
 
