@@ -108,7 +108,7 @@ function App() {
   return (
     <div className="workspace">
       <aside className="sidebar" aria-label="Main navigation">
-        <a className="brand" href="#top" aria-label="Oalgo AI" onClick={(event) => event.preventDefault()}>
+        <a className="brand" href="#top" aria-label="oalgo ai" onClick={(event) => event.preventDefault()}>
           <span className="brand-lockup"><img src="/oalgo-ai-logo.png" alt="" /></span>
           <img className="brand-icon" src="/favicon.png" alt="" />
         </a>
@@ -134,7 +134,7 @@ function App() {
           <div className="breadcrumbs"><span>Finance</span><ChevronRight size={14} /><strong>{section === 'queue' ? 'Invoice queue' : section[0].toUpperCase() + section.slice(1)}</strong></div>
           <div className="topbar-right">
             <span className="demo-pill"><span />{uploadCount ? `Demo + ${uploadCount} file${uploadCount > 1 ? 's' : ''}` : 'Demo data'}</span>
-            <span className="user-avatar" aria-label="Oalgo AI demo workspace">OA</span>
+            <span className="user-avatar" aria-label="oalgo ai demo workspace">oa</span>
           </div>
         </header>
 
