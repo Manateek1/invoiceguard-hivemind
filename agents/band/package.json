@@ -1,0 +1,16 @@
+{
+  "name": "invoiceguard-band-runtime",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node --env-file=.env runtime.mjs"
+  },
+  "dependencies": {
+    "@band-ai/sdk": "2.0.1",
+    "@superlinked/sie-sdk": "0.11.1",
+    "yaml": "2.9.1"
+  }
+}

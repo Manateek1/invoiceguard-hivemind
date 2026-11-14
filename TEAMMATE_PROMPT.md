@@ -1,6 +1,6 @@
 # Teammate kickoff prompt
 
-Copy this to your teammate after Dillon says **base ready**:
+The shared starter is ready. Copy this prompt to your teammate now:
 
 ```text
 We’re building InvoiceGuard for the Hive Mind hackathon: a B2B invoice review app for a club or small business. People in one business workspace add invoices; the app checks for duplicate bills, purchase-order or budget mismatches, and price changes against workspace history. It suggests human-reviewed ways to ask vendors about price increases and can prepare a payment draft. It must never send a payment or contact a vendor automatically.
@@ -16,7 +16,7 @@ Sponsor plan, each for a useful job:
 
 Your task is the light UI lane: improve the demo dashboard’s clarity, mobile layout, empty/error states, and demo usability. Keep it grounded in the existing invoice data and types. Do not build audit logic, provider calls, database/auth, or payment behavior.
 
-Wait for Dillon’s **base ready** message before editing. Then:
+Start from the latest shared base. Then:
 1. Fetch `origin/main` and create your own branch named `teammate/dashboard-ui` from the latest main.
 2. Limit changes to `src/App.tsx`, `src/App.css`, `src/index.css`, and files under `src/components/`. Don’t edit `src/domain/`, `src/data/`, `src/lib/`, `api/`, `agents/`, `supabase/`, `package.json`, or the lockfile.
 3. Don’t commit to main, force-push, overwrite someone else’s branch, or discard unrelated changes. Commit and push only your branch, then open a PR to main. If you lack write access, use a fork and PR.

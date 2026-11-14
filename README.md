@@ -32,14 +32,14 @@ The multi-member product is scoped to a company workspace. Its shared memory sho
 - **Keenable:** live web evidence for vendor-price research and savings suggestions.
 - **BAND:** agent coordination in the InvoiceGuard workflow, plus a separate room for the two developers' coding agents.
 
-The local demo currently uses deterministic rules and synthetic history. Sponsor providers are not live until their runtime adapters and credentials are configured. Keep developer-room credentials separate from the app's agent credentials. Never put secrets in the repo or send them in Messages.
+The local web demo uses deterministic rules and synthetic history. The separate BAND product runtime has sponsor adapters and setup instructions in [`agents/band/README.md`](./agents/band/README.md); providers stay off until configured with approved credentials. Keep developer-room credentials separate from the product agent credentials. Never put secrets in the repo or send them in Messages.
 
 ## Team workflow
 
 - `main` is the shared base. Create a named feature branch; never push directly to `main` or force-push.
 - Dillon owns audit logic, provider adapters, database/API, and the InvoiceGuard BAND runtime.
 - Teammate owns the presentational dashboard under `src/App.tsx`, `src/index.css`, and `src/components/`.
-- The teammate must wait for Dillon's **base ready** message, then branch from the latest `origin/main` as `teammate/dashboard-ui`.
+- The shared starter is ready. The teammate can branch from the latest `origin/main` as `teammate/dashboard-ui`; Dillon's runtime work is isolated under `agents/band/`.
 - Open a pull request to `main`. If the teammate lacks write access, fork the public repo and open a PR from that fork.
 - The complete copy-ready collaborator kickoff is in [`TEAMMATE_PROMPT.md`](./TEAMMATE_PROMPT.md). It keeps the developer coordination room separate from the app's runtime room.
 
