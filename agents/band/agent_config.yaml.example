@@ -1,0 +1,15 @@
+invoiceguard_coordinator:
+  agent_id: "PASTE_BAND_COORDINATOR_AGENT_ID"
+  api_key: "PASTE_BAND_COORDINATOR_API_KEY"
+
+invoiceguard_policy:
+  agent_id: "PASTE_BAND_POLICY_AGENT_ID"
+  api_key: "PASTE_BAND_POLICY_API_KEY"
+
+invoiceguard_memory:
+  agent_id: "PASTE_BAND_MEMORY_AGENT_ID"
+  api_key: "PASTE_BAND_MEMORY_API_KEY"
+
+invoiceguard_research:
+  agent_id: "PASTE_BAND_RESEARCH_AGENT_ID"
+  api_key: "PASTE_BAND_RESEARCH_API_KEY"
