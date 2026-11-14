@@ -1,4 +1,4 @@
-import type { HistoricalInvoice, InvoiceRecord } from '../domain/types'
+import type { BudgetRecord, HistoricalInvoice, InvoiceRecord, PurchaseOrderRecord } from '../domain/types'
 
 const officeSupplyItems = [
   { id: 'paper', description: 'Copy paper (case)', quantity: 2, unit: 'case', expectedUnitPrice: 54, billedUnitPrice: 67.5 },
@@ -25,13 +25,13 @@ export const demoInvoices: InvoiceRecord[] = [
     source: 'demo',
   },
   {
-    id: 'inv-bright-7762',
+    id: 'inv-bright-7759',
     vendor: 'Bright Print Co.',
-    invoiceNumber: 'BPC-7762',
+    invoiceNumber: 'BPC-7759',
     amount: 132,
     currency: 'USD',
-    invoiceDate: '2026-11-12',
-    dueDate: '2026-12-12',
+    invoiceDate: '2026-11-03',
+    dueDate: '2026-12-03',
     purchaseOrder: 'PO-1072',
     purchaseOrderTotal: 132,
     budgetName: 'Printing',
@@ -107,7 +107,7 @@ export const demoInvoices: InvoiceRecord[] = [
     currency: 'USD',
     invoiceDate: '2026-11-07',
     dueDate: '2026-12-07',
-    purchaseOrder: 'PO-1042',
+    purchaseOrder: 'PO-1039',
     purchaseOrderTotal: 300,
     budgetName: 'Transportation',
     budgetLimit: 500,
@@ -118,7 +118,7 @@ export const demoInvoices: InvoiceRecord[] = [
     id: 'inv-event-rentals-6687',
     vendor: 'Event Rentals Co.',
     invoiceNumber: 'ERC-6687',
-    amount: 675,
+    amount: 748.5,
     currency: 'USD',
     invoiceDate: '2026-11-06',
     dueDate: '2026-12-06',
@@ -126,7 +126,7 @@ export const demoInvoices: InvoiceRecord[] = [
     purchaseOrderTotal: 700,
     budgetName: 'Events',
     budgetLimit: 1000,
-    lineItems: [{ id: 'tables', description: 'Table and chair rental', quantity: 1, unit: 'package', billedUnitPrice: 675 }],
+    lineItems: [{ id: 'tables', description: 'Table and chair rental', quantity: 1, unit: 'package', billedUnitPrice: 748.5 }],
     source: 'demo',
   },
 ]
@@ -147,3 +147,51 @@ export const vendorHistory: HistoricalInvoice[] = [
     lineItems: officeSupplyItems.map((item) => ({ ...item, billedUnitPrice: item.expectedUnitPrice ?? item.billedUnitPrice })),
   },
 ]
+
+export const budgets: BudgetRecord[] = [
+  { name: 'Office supplies', perInvoiceLimit: 500 },
+  { name: 'Printing', perInvoiceLimit: 400 },
+  { name: 'Events', perInvoiceLimit: 1000 },
+  { name: 'Technology', perInvoiceLimit: 1200 },
+  { name: 'Facilities', perInvoiceLimit: 300 },
+  { name: 'Transportation', perInvoiceLimit: 500 },
+]
+
+export const purchaseOrders: PurchaseOrderRecord[] = [
+  { number: 'PO-1058', vendor: 'Acme Office Supply', approvedTotal: 450, budgetName: 'Office supplies' },
+  { number: 'PO-1072', vendor: 'Bright Print Co.', approvedTotal: 132, budgetName: 'Printing' },
+  { number: 'PO-1064', vendor: 'Campus Catering', approvedTotal: 1250, budgetName: 'Events' },
+  { number: 'PO-1042', vendor: 'TechWorks IT', approvedTotal: 850, budgetName: 'Technology' },
+  { number: 'PO-1035', vendor: 'Green Clean Supplies', approvedTotal: 120, budgetName: 'Facilities' },
+  { number: 'PO-1057', vendor: 'Acme Office Supply', approvedTotal: 450, budgetName: 'Office supplies' },
+  { number: 'PO-1039', vendor: 'City Transit Services', approvedTotal: 300, budgetName: 'Transportation' },
+  { number: 'PO-1049', vendor: 'Event Rentals Co.', approvedTotal: 700, budgetName: 'Events' },
+]
+
+const normalizeReference = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+export function linkBusinessRecords(invoice: InvoiceRecord): InvoiceRecord {
+  const matchingPurchaseOrders = invoice.purchaseOrder
+    ? purchaseOrders.filter((order) => normalizeReference(order.number) === normalizeReference(invoice.purchaseOrder ?? ''))
+    : []
+  const matchingVendorOrder = matchingPurchaseOrders.find((order) => normalizeReference(order.vendor) === normalizeReference(invoice.vendor))
+  const linkedOrder = matchingVendorOrder ?? matchingPurchaseOrders[0]
+  const purchaseOrderStatus = !invoice.purchaseOrder
+    ? undefined
+    : matchingPurchaseOrders.length === 0
+      ? 'not-found' as const
+      : matchingVendorOrder
+        ? 'matched' as const
+        : 'vendor-mismatch' as const
+  const budgetName = invoice.budgetName ?? (purchaseOrderStatus === 'matched' ? matchingVendorOrder?.budgetName : undefined)
+  const linkedBudget = budgetName ? budgets.find((budget) => normalizeReference(budget.name) === normalizeReference(budgetName)) : undefined
+
+  return {
+    ...invoice,
+    purchaseOrderVendor: linkedOrder?.vendor,
+    purchaseOrderStatus,
+    purchaseOrderTotal: invoice.purchaseOrderTotal ?? (purchaseOrderStatus === 'matched' ? matchingVendorOrder?.approvedTotal : undefined),
+    budgetName,
+    budgetLimit: invoice.budgetLimit ?? linkedBudget?.perInvoiceLimit,
+  }
+}

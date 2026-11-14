@@ -11,9 +11,9 @@ npm install
 npm run dev
 ```
 
-The app starts with synthetic invoices that show a duplicate, a budget overrun, a vendor price increase, and clean invoices. Use **Upload invoice** to try your own PDF, image, TXT, JSON, or CSV. CSV supports one invoice per row with `vendor`, `invoice_number`, and `amount` columns; `invoice_date`, `due_date`, and `po_number` are optional. Confirm or correct the extracted fields before they enter the review queue.
+The app starts with synthetic invoices that show a duplicate, a budget overrun, a purchase-order overrun, a vendor price increase, and clean invoices. Use **Upload invoice** to try your own PDF, image, TXT, JSON, or CSV. CSV supports one invoice per row with `vendor`, `invoice_number`, and `amount` columns; `invoice_date`, `due_date`, `po_number`, `item_description`, `quantity`, `unit`, `unit_price`, and `line_total` are optional. JSON can include a `lineItems` array with `description`, `quantity`, `unit`, and `unitPrice` for each item. Confirm or correct the vendor, invoice number, date, amount, and purchase order before adding the invoice; enter the date if extraction missed it.
 
-PDF text extraction and image OCR run in the browser. The original file is not uploaded or persisted; parsed fields stay in the current page session. Refreshing the page resets the local demo. Demo invoice data is synthetic and must not be presented as actual savings.
+PDF text extraction and image OCR run in the browser. Recognized line items are compared with earlier vendor prices; unmatched items remain visible without an invented baseline. Known purchase orders link to the demo workspace's approved totals and budgets, while unknown or mismatched orders are flagged for review. The original file is not uploaded or persisted; parsed fields stay in the current page session. Refreshing the page resets the local demo. Demo invoice data is synthetic and must not be presented as actual savings.
 
 ## Product flow
 

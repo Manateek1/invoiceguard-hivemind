@@ -1,8 +1,14 @@
 import { useState } from 'react'
-import { ArrowUpRight, Check, CircleAlert, FileText, Info, ShieldCheck, Sparkles } from 'lucide-react'
+import { Check, CircleAlert, FileText, Info, ShieldCheck, Sparkles } from 'lucide-react'
 import type { InvoiceAudit } from '../domain/types'
 import { formatMoney } from '../lib/audit-engine'
 import { StatusBadge } from './StatusBadge'
+
+function formatDate(value: string) {
+  if (!value) return 'Needs review'
+  const date = new Date(value + 'T00:00:00')
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(date)
+}
 
 export function InvoiceDetails({ invoice, onPrepareDraft }: { invoice: InvoiceAudit; onPrepareDraft: () => void }) {
   const [showPriceRequest, setShowPriceRequest] = useState(false)
@@ -16,22 +22,24 @@ export function InvoiceDetails({ invoice, onPrepareDraft }: { invoice: InvoiceAu
       <StatusBadge status={invoice.status} />
     </div>
     <div className="detail-summary">
+      <div className="amount-line"><span>Invoice date</span><strong><time dateTime={invoice.invoiceDate || undefined}>{formatDate(invoice.invoiceDate)}</time></strong></div>
+      {invoice.dueDate && <div className="amount-line"><span>Due date</span><strong><time dateTime={invoice.dueDate}>{formatDate(invoice.dueDate)}</time></strong></div>}
       <div className="amount-line"><span>Amount billed</span><strong>{formatMoney(invoice.amount)}</strong></div>
       <div className="amount-line"><span>Expected amount</span><strong>{formatMoney(invoice.expectedAmount)}</strong></div>
       {invoice.potentialSavings > 0 && <div className="amount-line savings-line"><span>Potential savings</span><strong>{formatMoney(invoice.potentialSavings)} <small>({variance.toFixed(1)}%)</small></strong></div>}
-      {invoice.purchaseOrder && <div className="amount-line"><span>Purchase order</span><strong>{invoice.purchaseOrder} <small className="matched">{invoice.purchaseOrderTotal !== undefined && invoice.amount <= invoice.purchaseOrderTotal ? 'Matched' : 'Review'}</small></strong></div>}
-      {invoice.budgetName && <div className="amount-line"><span>Budget</span><strong>{invoice.budgetName}{invoice.budgetLimit !== undefined && invoice.amount <= invoice.budgetLimit ? ' · within limit' : ''}</strong></div>}
+      {invoice.purchaseOrder && <div className="amount-line"><span>Purchase order</span><strong>{invoice.purchaseOrder} <small className={invoice.purchaseOrderStatus === 'matched' ? 'matched' : 'price-high'}>{invoice.purchaseOrderStatus === 'matched' ? 'Matched' : invoice.purchaseOrderStatus === 'vendor-mismatch' ? 'Vendor mismatch' : 'Not found'}{invoice.purchaseOrderTotal !== undefined ? ' · ' + formatMoney(invoice.purchaseOrderTotal) + ' approved' : ''}</small></strong></div>}
+      {invoice.budgetName && <div className="amount-line"><span>Budget</span><strong>{invoice.budgetName}{invoice.budgetLimit !== undefined && <small className={invoice.amount <= invoice.budgetLimit ? 'matched' : 'price-high'}> · {formatMoney(invoice.budgetLimit)} limit{invoice.amount <= invoice.budgetLimit ? '' : ' · over limit'}</small>}</strong></div>}
     </div>
     <section className="detail-section">
-      <div className="detail-section-heading"><h3>Line items <span>({invoice.lineItems.length})</span></h3><span className="section-note">Price comparison</span></div>
-      <div className="line-items-table"><div className="line-item-row line-item-head"><span>Item</span><span>Expected</span><span>Billed</span></div>
+      <div className="detail-section-heading"><h3>Line items <span>({invoice.lineItems.length})</span></h3><span className="section-note">Price per unit</span></div>
+      {invoice.lineItems.length ? <div className="line-items-table"><div className="line-item-row line-item-head"><span>Quantity · item</span><span>Expected</span><span>Billed</span></div>
         {invoice.lineItems.map((item) => {
-          const isHigh = item.expectedUnitPrice !== undefined && item.billedUnitPrice > item.expectedUnitPrice * 1.1
-          return <div className="line-item-row" key={item.id}><span className="line-item-name">{item.description}<small>{item.quantity} {item.unit}{item.quantity > 1 ? 's' : ''}</small></span>
+          const isHigh = item.expectedUnitPrice !== undefined && item.expectedUnitPrice > 0 && item.billedUnitPrice > item.expectedUnitPrice * 1.1
+          return <div className="line-item-row" key={item.id}><span className="line-item-name" title={item.quantity + ' ' + item.unit + ' · ' + item.description}>{item.quantity} {item.unit} · {item.description}</span>
             <span>{item.expectedUnitPrice !== undefined ? formatMoney(item.expectedUnitPrice) : '—'}</span><strong className={isHigh ? 'price-high' : ''}>{formatMoney(item.billedUnitPrice)}{isHigh && <small>↑</small>}</strong>
           </div>
         })}
-      </div>
+      </div> : <p className="evidence-footnote"><Info size={13} /> No line items were detected in this invoice.</p>}
     </section>
     <section className="detail-section agent-section">
       <div className="detail-section-heading"><h3>Review handoffs</h3><span className="live-indicator"><span /> Local run</span></div>
@@ -65,7 +73,7 @@ export function InvoiceDetails({ invoice, onPrepareDraft }: { invoice: InvoiceAu
       </div>
     </section>}
     <div className="draft-actions"><button className="primary-button draft-button" onClick={onPrepareDraft} disabled={invoice.status === 'draft'}><FileText size={16} />{invoice.status === 'draft' ? 'Draft prepared' : 'Prepare payment draft'}</button>
-      <p><ShieldCheck size={13} /> This only prepares a draft. It cannot send a payment.</p></div>
-    <a className="source-link" href="#review" onClick={(event) => event.preventDefault()}>Review source file <ArrowUpRight size={13} /></a>
+      <p><ShieldCheck size={13} /> A person must approve and send any payment.</p></div>
+    <div className="source-link"><Info size={13} /> The original file stays on this device.</div>
   </aside>
 }

@@ -21,6 +21,8 @@ export interface InvoiceRecord {
   dueDate?: string
   purchaseOrder?: string
   purchaseOrderTotal?: number
+  purchaseOrderVendor?: string
+  purchaseOrderStatus?: 'matched' | 'not-found' | 'vendor-mismatch'
   budgetName?: string
   budgetLimit?: number
   lineItems: InvoiceLineItem[]
@@ -58,4 +60,16 @@ export interface HistoricalInvoice {
   amount: number
   invoiceDate: string
   lineItems: InvoiceLineItem[]
+}
+
+export interface PurchaseOrderRecord {
+  number: string
+  vendor: string
+  approvedTotal: number
+  budgetName?: string
+}
+
+export interface BudgetRecord {
+  name: string
+  perInvoiceLimit: number
 }
