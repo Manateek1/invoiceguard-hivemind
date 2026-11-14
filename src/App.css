@@ -1492,7 +1492,7 @@
 
 .overview-primary-grid {
   display: grid;
-  grid-template-columns: minmax(390px, .78fr) minmax(0, 1.22fr);
+  grid-template-columns: minmax(420px, .9fr) minmax(0, 1.1fr);
   align-items: start;
   gap: 16px;
 }
@@ -1508,6 +1508,15 @@
 .overview-queue .invoice-table {
   min-width: 0;
   table-layout: fixed;
+}
+
+.overview-queue .status-badge {
+  gap: 0;
+  padding: 4px 5px;
+}
+
+.overview-queue .status-badge svg {
+  display: none;
 }
 
 .overview-queue .invoice-table th:nth-child(5),
@@ -1551,6 +1560,18 @@
 
 .overview-primary-grid > .memory-graph-card {
   min-width: 0;
+}
+
+.sidebar .brand-lockup {
+  padding: 6px 8px;
+  background: #fff;
+  border-radius: 9px;
+}
+
+.sidebar .brand-icon {
+  padding: 2px;
+  background: #fff;
+  border-radius: 10px;
 }
 
 .overview-dashboard > .orchestration-section {
@@ -4095,7 +4116,7 @@
   }
 }
 
-@media (max-width: 1360px) {
+@media (max-width: 1180px) {
   .overview-primary-grid {
     grid-template-columns: minmax(0, 1fr);
   }

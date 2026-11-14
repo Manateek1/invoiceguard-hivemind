@@ -285,7 +285,7 @@ function OalgoLandingPage() {
           <div className="preview-window-body">
             <div className="preview-app-heading"><div><small>ACCOUNTS PAYABLE</small><strong>Invoice review</strong></div><span className="preview-upload">Upload invoice <ArrowRight size={13} /></span></div>
             <div className="preview-metrics">
-              <div><small>Needs review</small><strong>3 <em>invoices</em></strong></div>
+              <div><small>Needs review</small><strong>4 <em>invoices</em></strong></div>
               <div><small>Price variance</small><strong>$86.50</strong></div>
               <div><small>Human gate</small><strong>Required</strong></div>
             </div>
