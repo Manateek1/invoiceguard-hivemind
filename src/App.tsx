@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import {
   Activity, ArrowDownUp, Building2, ChevronRight, Clock3, FileCheck2,
-  FileText, Home, Search, ShieldCheck, Upload,
+  FileText, Home, Search, Upload,
 } from 'lucide-react'
 import { demoInvoices, vendorHistory } from './data/demo-invoices'
 import type { InvoiceAudit } from './domain/types'
@@ -11,6 +11,7 @@ import { InvoiceDetails } from './components/InvoiceDetails'
 import { InvoiceQueue } from './components/InvoiceQueue'
 import { UploadInvoiceModal } from './components/UploadInvoiceModal'
 import './App.css'
+import './brand.css'
 
 type Section = 'overview' | 'queue' | 'vendors' | 'activity'
 const initialAudits = demoInvoices.map((invoice) => auditInvoice(invoice))
@@ -107,9 +108,9 @@ function App() {
   return (
     <div className="workspace">
       <aside className="sidebar" aria-label="Main navigation">
-        <a className="brand" href="#top" onClick={(event) => event.preventDefault()}>
-          <span className="brand-mark"><ShieldCheck size={20} strokeWidth={2.3} /></span>
-          <span>InvoiceGuard</span>
+        <a className="brand" href="#top" aria-label="Oalgo AI" onClick={(event) => event.preventDefault()}>
+          <span className="brand-lockup"><img src="/oalgo-ai-logo.png" alt="" /></span>
+          <img className="brand-icon" src="/favicon.png" alt="" />
         </a>
         <div className="workspace-label">WORKSPACE</div>
         <nav className="nav-list">
@@ -133,7 +134,7 @@ function App() {
           <div className="breadcrumbs"><span>Finance</span><ChevronRight size={14} /><strong>{section === 'queue' ? 'Invoice queue' : section[0].toUpperCase() + section.slice(1)}</strong></div>
           <div className="topbar-right">
             <span className="demo-pill"><span />{uploadCount ? `Demo + ${uploadCount} file${uploadCount > 1 ? 's' : ''}` : 'Demo data'}</span>
-            <span className="user-avatar" aria-label="Demo workspace">IG</span>
+            <span className="user-avatar" aria-label="Oalgo AI demo workspace">OA</span>
           </div>
         </header>
 
