@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { FileUp, LockKeyhole, X } from 'lucide-react'
+import { useEffect, useState, type DragEvent } from 'react'
+import { FileUp, LockKeyhole, RefreshCw, UploadCloud, X } from 'lucide-react'
 import type { ParsedInvoice } from '../lib/invoice-parser'
 import { formatMoney } from '../lib/audit-engine'
 
@@ -10,10 +10,52 @@ interface Props {
   onClose: () => void
   onChoose: () => void
   onConfirm: (invoices: ParsedInvoice[]) => void
+  onDropFile?: (file: File) => void
 }
 
-export function UploadInvoiceModal({ isParsing, parsedInvoices, error, onClose, onChoose, onConfirm }: Props) {
+export function UploadInvoiceModal({ isParsing, parsedInvoices, error, onClose, onChoose, onConfirm, onDropFile }: Props) {
   const [drafts, setDrafts] = useState<ParsedInvoice[]>(parsedInvoices ?? [])
+  const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !isParsing) onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isParsing, onClose])
+
+  function handleDragOver(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+    if (!isParsing) setIsDragging(true)
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+    setIsDragging(false)
+  }
+
+  function handleDrop(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+    setIsDragging(false)
+    if (isParsing) return
+    const file = event.dataTransfer.files?.[0]
+    if (!file) return
+    if (onDropFile) {
+      onDropFile(file)
+      return
+    }
+    const input = document.querySelector<HTMLInputElement>('.hidden-file-input')
+    if (input) {
+      const transfer = new DataTransfer()
+      transfer.items.add(file)
+      input.files = transfer.files
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+  }
 
   function edit(index: number, key: 'vendor' | 'invoiceNumber' | 'amount' | 'invoiceDate' | 'purchaseOrder', value: string) {
     setDrafts((current) => current.map((invoice, currentIndex) => currentIndex !== index ? invoice : {
@@ -69,14 +111,14 @@ export function UploadInvoiceModal({ isParsing, parsedInvoices, error, onClose, 
         <p className="privacy-note"><LockKeyhole size={14} /> Parsed fields stay in this browser session.</p>
       </> : <>
         <p className="upload-lede">Upload one invoice or a CSV with multiple rows. We’ll read it locally and let you correct the extracted fields.</p>
-        <button className="dropzone" onClick={onChoose} disabled={isParsing}>
-          <span className="dropzone-symbol"><FileUp size={19} /></span>
-          <strong>{isParsing ? 'Reading invoices…' : 'Choose a file'}</strong>
+        <button className={`dropzone ${isDragging ? 'drag-over' : ''}`} onClick={onChoose} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} disabled={isParsing} type="button" aria-label="Upload invoice file dropzone">
+          <span className="dropzone-symbol">{isParsing ? <RefreshCw size={22} className="spin-icon" /> : isDragging ? <UploadCloud size={24} /> : <FileUp size={19} />}</span>
+          <strong>{isParsing ? 'Reading invoices…' : isDragging ? 'Drop file here' : 'Choose or drop a file'}</strong>
           <small>{isParsing ? 'Local OCR may take a few seconds.' : 'PDF, image, TXT, JSON, or CSV · up to 10 MB'}</small>
         </button>
         {error && <p className="upload-error" role="alert">{error}</p>}
         <p className="privacy-note"><LockKeyhole size={14} /> The file stays on this device. Only confirmed fields enter the demo.</p>
-        <button className="text-button" onClick={onClose} disabled={isParsing}>Cancel</button>
+        <button className="text-button" onClick={onClose} disabled={isParsing} type="button">Cancel</button>
       </>}
     </section>
   </div>

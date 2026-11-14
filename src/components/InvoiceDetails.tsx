@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, CircleAlert, FileText, Info, ShieldCheck, Sparkles } from 'lucide-react'
+import { Check, CircleAlert, ClipboardCheck, Copy, FileText, Info, ShieldCheck, Sparkles, X } from 'lucide-react'
 import type { InvoiceAudit } from '../domain/types'
 import { formatMoney } from '../lib/audit-engine'
 import { StatusBadge } from './StatusBadge'
@@ -10,12 +10,29 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(date)
 }
 
-export function InvoiceDetails({ invoice, onPrepareDraft }: { invoice: InvoiceAudit; onPrepareDraft: () => void }) {
+export function InvoiceDetails({ invoice, onPrepareDraft, onClose }: { invoice: InvoiceAudit; onPrepareDraft: () => void; onClose?: () => void }) {
   const [showPriceRequest, setShowPriceRequest] = useState(false)
+  const [copied, setCopied] = useState(false)
   const variance = invoice.potentialSavings > 0 ? (invoice.potentialSavings / invoice.amount) * 100 : 0
   const priceFindings = invoice.findings.filter((finding) => finding.kind === 'overcharge')
   const priceRequest = `Hi ${invoice.vendor},\n\nWe’re reviewing invoice ${invoice.invoiceNumber}. Our recent invoice history shows ${priceFindings.length} line item${priceFindings.length === 1 ? '' : 's'} priced above the previous vendor prices. The estimated difference is ${formatMoney(invoice.potentialSavings)}. Could you confirm the updated pricing or share a corrected invoice?\n\nThanks,\n[Your team]`
+  const handleBack = onClose ?? (() => {
+    const target = document.querySelector<HTMLElement>('.queue-section') ?? document.querySelector<HTMLElement>('.page-heading')
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(priceRequest)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2400)
+    } catch {
+      setCopied(false)
+    }
+  }
+
   return <aside className="detail-panel" aria-label="Selected invoice details">
+    <div className="mobile-detail-bar"><button type="button" className="mobile-back-btn" onClick={handleBack} aria-label="Back to queue"><X size={16} /> Back to queue</button></div>
     <div className="detail-header">
       <div className="detail-vendor-icon"><ShieldCheck size={19} /></div>
       <div className="detail-title"><h2>{invoice.vendor}</h2><span>Invoice {invoice.invoiceNumber}</span></div>
@@ -66,7 +83,12 @@ export function InvoiceDetails({ invoice, onPrepareDraft }: { invoice: InvoiceAu
           {showPriceRequest ? 'Hide message draft' : 'Draft price request'}
         </button>
         {showPriceRequest && <div className="price-request-preview">
-          <label htmlFor="price-request-draft">Message draft</label>
+          <div className="price-request-header">
+            <label htmlFor="price-request-draft">Message draft</label>
+            <button type="button" className="copy-btn" onClick={handleCopy} aria-label="Copy draft to clipboard">
+              {copied ? <><ClipboardCheck size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
+            </button>
+          </div>
           <textarea id="price-request-draft" value={priceRequest} readOnly rows={7} />
           <small>Review and edit before sending. InvoiceGuard has not contacted the vendor.</small>
         </div>}
