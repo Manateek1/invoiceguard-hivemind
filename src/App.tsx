@@ -14,6 +14,7 @@ import { InvoiceQueue } from './components/InvoiceQueue'
 import { InvoiceMemoryGraph, SharedReviewContext } from './components/SharedReviewContext'
 import { UploadInvoiceModal } from './components/UploadInvoiceModal'
 import './App.css'
+import './brand.css'
 
 type Section = 'overview' | 'queue' | 'vendors' | 'activity' | 'agents' | 'memory' | 'connections'
 const initialAudits = demoInvoices.map((invoice) => auditInvoice(invoice))
@@ -22,7 +23,7 @@ function App() {
   const pathname = window.location.pathname.replace(/\/+$/, '') || '/'
   return pathname === '/demo' || pathname.startsWith('/demo/')
     ? <InvoiceGuardWorkspace />
-    : <OlgoLandingPage />
+    : <OalgoLandingPage />
 }
 
 function InvoiceGuardWorkspace() {
@@ -139,9 +140,9 @@ function InvoiceGuardWorkspace() {
   return (
     <div className={'workspace' + (hasDetailPanel ? ' has-detail' : '')}>
       <aside className="sidebar" aria-label="Main navigation">
-        <a className="brand" href="/">
-          <span className="brand-mark"><ShieldCheck size={19} strokeWidth={2.2} /></span>
-          <span className="brand-lockup"><strong>Olgo</strong><small>InvoiceGuard demo</small></span>
+        <a className="brand" href="/" aria-label="Oalgo AI home">
+          <span className="brand-lockup"><img src="/oalgo-ai-logo.png" alt="" /></span>
+          <img className="brand-icon" src="/favicon.png" alt="" />
         </a>
         <div className="workspace-switcher">
           <span className="workspace-avatar">NB</span>
@@ -170,7 +171,7 @@ function InvoiceGuardWorkspace() {
           <div className="breadcrumbs"><span>Northstar Business</span><ChevronRight size={14} /><strong>{sectionLabel[section]}</strong></div>
           <div className="topbar-right">
             <span className="demo-pill"><span />{uploadCount ? `Demo + ${uploadCount} file${uploadCount > 1 ? 's' : ''}` : 'Demo data'}</span>
-            <span className="user-avatar" aria-label="Demo workspace">DN</span>
+            <span className="user-avatar" aria-label="Oalgo AI demo workspace">OA</span>
           </div>
         </header>
 
@@ -261,10 +262,10 @@ function ActivityList({ invoices, onSelect }: { invoices: InvoiceAudit[]; onSele
   </section>
 }
 
-function OlgoLandingPage() {
+function OalgoLandingPage() {
   return <div className="olgo-home">
     <header className="olgo-header">
-      <a className="olgo-wordmark" href="/" aria-label="Olgo home"><span className="olgo-mark"><ShieldCheck size={18} /></span>Olgo</a>
+      <a className="olgo-wordmark" href="/" aria-label="Oalgo AI home"><img src="/oalgo-ai-logo.png" alt="Oalgo AI" /></a>
       <span className="olgo-header-label">FINANCE OPERATIONS, MADE REVIEWABLE</span>
       <a className="olgo-header-link" href="/demo">Open demo <ArrowRight size={15} /></a>
     </header>
@@ -280,7 +281,7 @@ function OlgoLandingPage() {
           <div className="olgo-trust-row"><span><ShieldCheck size={15} /> Human approval stays required</span><span><Network size={15} /> Memory links stay visible</span></div>
         </div>
         <div className="olgo-product-preview">
-          <div className="preview-window-top"><div className="preview-dots"><i /><i /><i /></div><span>OLGO / DEMO</span><span className="preview-window-status"><i /> Sample workspace</span></div>
+          <div className="preview-window-top"><div className="preview-dots"><i /><i /><i /></div><span>OALGO AI / DEMO</span><span className="preview-window-status"><i /> Sample workspace</span></div>
           <div className="preview-window-body">
             <div className="preview-app-heading"><div><small>ACCOUNTS PAYABLE</small><strong>Invoice review</strong></div><span className="preview-upload">Upload invoice <ArrowRight size={13} /></span></div>
             <div className="preview-metrics">
@@ -305,7 +306,7 @@ function OlgoLandingPage() {
         <div><span className="capability-number">03</span><h2>People approve payments</h2><p>InvoiceGuard prepares the review. A human decides whether a payment should proceed.</p></div>
       </section>
     </main>
-    <footer className="olgo-footer"><span>OLGO</span><span>InvoiceGuard · Synthetic demo workspace</span><a href="/demo">Enter demo <ArrowRight size={14} /></a></footer>
+    <footer className="olgo-footer"><span>OALGO AI</span><span>InvoiceGuard · Synthetic demo workspace</span><a href="/demo">Enter demo <ArrowRight size={14} /></a></footer>
   </div>
 }
 

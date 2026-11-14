@@ -124,7 +124,7 @@ export function AgentOrchestration({ invoice }: { invoice: InvoiceAudit }) {
         <article className="backend-service"><span className="backend-service-icon"><Network size={16} /></span><div><strong>Superlinked SIE</strong><p>Optional retrieval · deterministic matching is active</p></div><span className="service-state muted">Optional</span></article>
         <article className="backend-service"><span className="backend-service-icon"><Search size={16} /></span><div><strong>Keenable research</strong><p>{researchStep?.source || 'Vendor research adapter is not configured'}</p></div><span className="service-state muted">Not connected</span></article>
         <article className="backend-service"><span className="backend-service-icon local"><UserRoundCheck size={16} /></span><div><strong>Payment approval</strong><p>No payment API is available in this demo</p></div><span className="service-state local">Person required</span></article>
-        <article className="backend-service"><span className="backend-service-icon"><PlugZap size={16} /></span><div><strong>Web deployment</strong><p>Olgo /demo · Vercel preview build</p></div><span className="service-state muted">Preview</span></article>
+        <article className="backend-service"><span className="backend-service-icon"><PlugZap size={16} /></span><div><strong>Web deployment</strong><p>Oalgo AI /demo · Vercel preview build</p></div><span className="service-state muted">Preview</span></article>
       </div>
     </section>
 

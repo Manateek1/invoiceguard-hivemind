@@ -2981,7 +2981,7 @@
   border: 0;
 }
 
-/* Olgo root page */
+/* Oalgo AI root page */
 .olgo-home {
   min-height: 100vh;
   color: #1c2d3f;
@@ -3011,14 +3011,11 @@
   letter-spacing: -.55px;
 }
 
-.olgo-mark {
-  display: grid;
-  width: 31px;
-  height: 31px;
-  place-items: center;
-  color: white;
-  background: #1d786f;
-  border-radius: 9px;
+.olgo-wordmark img {
+  display: block;
+  width: 146px;
+  height: auto;
+  object-fit: contain;
 }
 
 .olgo-header-label {
