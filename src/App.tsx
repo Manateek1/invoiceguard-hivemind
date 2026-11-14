@@ -1,24 +1,34 @@
 import { useMemo, useRef, useState } from 'react'
 import {
-  Activity, ArrowDownUp, Building2, ChevronRight, Clock3, FileCheck2,
-  FileText, Home, Search, ShieldCheck, Upload,
+  Activity, ArrowDownUp, ArrowRight, Building2, ChevronRight, Clock3, FileCheck2,
+  FileText, Home, Network, PlugZap, Search, ShieldCheck, Upload, Workflow,
 } from 'lucide-react'
 import { demoInvoices, vendorHistory } from './data/demo-invoices'
 import type { InvoiceAudit } from './domain/types'
 import { auditInvoice, formatMoney } from './lib/audit-engine'
 import { parseInvoiceFile, parsedToRecord, type ParsedInvoice } from './lib/invoice-parser'
+import { AgentOrchestration } from './components/AgentOrchestration'
+import { ConnectorsPage } from './components/ConnectorsPage'
 import { InvoiceDetails } from './components/InvoiceDetails'
 import { InvoiceQueue } from './components/InvoiceQueue'
+import { InvoiceMemoryGraph, SharedReviewContext } from './components/SharedReviewContext'
 import { UploadInvoiceModal } from './components/UploadInvoiceModal'
 import './App.css'
 
-type Section = 'overview' | 'queue' | 'vendors' | 'activity'
+type Section = 'overview' | 'queue' | 'vendors' | 'activity' | 'agents' | 'memory' | 'connections'
 const initialAudits = demoInvoices.map((invoice) => auditInvoice(invoice))
 
 function App() {
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/'
+  return pathname === '/demo' || pathname.startsWith('/demo/')
+    ? <InvoiceGuardWorkspace />
+    : <OlgoLandingPage />
+}
+
+function InvoiceGuardWorkspace() {
   const [audits, setAudits] = useState<InvoiceAudit[]>(initialAudits)
   const [selectedId, setSelectedId] = useState(initialAudits[0].id)
-  const [section, setSection] = useState<Section>('queue')
+  const [section, setSection] = useState<Section>('overview')
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [vendorFilter, setVendorFilter] = useState('all')
@@ -30,6 +40,7 @@ function App() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const selected = audits.find((invoice) => invoice.id === selectedId) ?? audits[0]
+  const hasDetailPanel = section === 'queue'
   const vendors = [...new Set(audits.map((invoice) => invoice.vendor))].sort()
   const needsReview = audits.filter((invoice) => invoice.status === 'review' || invoice.status === 'duplicate').length
   const ready = audits.filter((invoice) => invoice.status === 'ready' || invoice.status === 'draft').length
@@ -99,18 +110,44 @@ function App() {
 
   const navItems = [
     { id: 'overview' as const, label: 'Overview', icon: Home },
-    { id: 'queue' as const, label: 'Invoice queue', icon: FileText },
+    { id: 'queue' as const, label: 'Invoices', icon: FileText },
     { id: 'vendors' as const, label: 'Vendors', icon: Building2 },
-    { id: 'activity' as const, label: 'Activity', icon: Activity },
+    { id: 'agents' as const, label: 'Agent activity', icon: Workflow },
+    { id: 'memory' as const, label: 'Memory graph', icon: Network },
+    { id: 'connections' as const, label: 'Connections', icon: PlugZap },
+    { id: 'activity' as const, label: 'Audit log', icon: Activity },
   ]
+  const sectionLabel: Record<Section, string> = {
+    overview: 'Overview',
+    queue: 'Invoices',
+    vendors: 'Vendors',
+    activity: 'Audit log',
+    agents: 'Agent activity',
+    memory: 'Memory graph',
+    connections: 'Connections',
+  }
+  const pageCopy: Record<Section, { title: string; description: string }> = {
+    overview: { title: 'Overview', description: 'A clear view of invoices waiting for a person to review.' },
+    queue: { title: 'Invoice review', description: 'Check each invoice against vendor history, purchase orders, and budgets.' },
+    vendors: { title: 'Vendors', description: 'See the sample invoice history used to compare vendor pricing.' },
+    activity: { title: 'Audit log', description: 'A record of checks and findings for each invoice in this session.' },
+    agents: { title: 'Agent activity', description: 'See each review role, what it receives, and what it passes forward.' },
+    memory: { title: 'Business memory graph', description: 'Inspect the links between invoices and the business records behind a review.' },
+    connections: { title: 'Connections', description: 'Preview the services that can supply invoice and business context.' },
+  }
 
   return (
-    <div className="workspace">
+    <div className={'workspace' + (hasDetailPanel ? ' has-detail' : '')}>
       <aside className="sidebar" aria-label="Main navigation">
-        <a className="brand" href="#top" onClick={(event) => event.preventDefault()}>
-          <span className="brand-mark"><ShieldCheck size={20} strokeWidth={2.3} /></span>
-          <span>InvoiceGuard</span>
+        <a className="brand" href="/">
+          <span className="brand-mark"><ShieldCheck size={19} strokeWidth={2.2} /></span>
+          <span className="brand-lockup"><strong>Olgo</strong><small>InvoiceGuard demo</small></span>
         </a>
+        <div className="workspace-switcher">
+          <span className="workspace-avatar">NB</span>
+          <span><strong>Northstar Business</strong><small>Demo workspace</small></span>
+          <ChevronRight size={14} />
+        </div>
         <div className="workspace-label">WORKSPACE</div>
         <nav className="nav-list">
           {navItems.map(({ id, label, icon: Icon }) => (
@@ -122,41 +159,54 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="memory-mark"><span className="memory-dot" />Shared vendor memory</div>
-          <p>History is scoped to this business workspace. Uploaded files stay in this browser.</p>
-          <a href="https://github.com/Manateek1/invoiceguard-hivemind" target="_blank" rel="noreferrer">Hackathon build <ChevronRight size={14} /></a>
+          <div className="memory-mark"><span className="memory-dot" />Local review context</div>
+          <p>This demo uses synthetic records. Check Connections for provider status.</p>
+          <div className="sidebar-footer-note"><span>Human approval required</span><ShieldCheck size={14} /></div>
         </div>
       </aside>
 
       <main className="main-column" id="top">
         <header className="topbar">
-          <div className="breadcrumbs"><span>Finance</span><ChevronRight size={14} /><strong>{section === 'queue' ? 'Invoice queue' : section[0].toUpperCase() + section.slice(1)}</strong></div>
+          <div className="breadcrumbs"><span>Northstar Business</span><ChevronRight size={14} /><strong>{sectionLabel[section]}</strong></div>
           <div className="topbar-right">
             <span className="demo-pill"><span />{uploadCount ? `Demo + ${uploadCount} file${uploadCount > 1 ? 's' : ''}` : 'Demo data'}</span>
-            <span className="user-avatar" aria-label="Demo workspace">IG</span>
+            <span className="user-avatar" aria-label="Demo workspace">DN</span>
           </div>
         </header>
 
         <div className="page-content">
           <div className="page-heading">
             <div>
-              <h1>{section === 'queue' ? 'Invoice review' : section === 'overview' ? 'Overview' : section === 'vendors' ? 'Vendors' : 'Activity'}</h1>
-              <p>Review invoices, spot exceptions, and prepare payment drafts for approval.</p>
+              <h1>{pageCopy[section].title}</h1>
+              <p>{pageCopy[section].description}</p>
             </div>
             <button className="primary-button upload-button" onClick={() => setUploadOpen(true)}><Upload size={16} /> Upload invoice</button>
           </div>
 
-          <section className="summary-row" aria-label="Invoice summary">
-            <div className="summary-item"><span className="summary-label">Needs review</span><strong>{needsReview} <small>{needsReview === 1 ? 'invoice' : 'invoices'}</small></strong></div>
-            <div className="summary-item savings"><span className="summary-label">Potential savings</span><strong>{formatMoney(potentialSavings)}</strong><span className="summary-note">Price differences only</span></div>
-            <div className="summary-item"><span className="summary-label">Ready to approve</span><strong>{ready} <small>{ready === 1 ? 'invoice' : 'invoices'}</small></strong></div>
-          </section>
+          {(section === 'queue' || section === 'overview') && <section className="summary-row" aria-label="Invoice summary">
+            <div className="summary-item"><span className="summary-label">Needs review</span><strong>{needsReview} <small>{needsReview === 1 ? 'invoice' : 'invoices'}</small></strong><span className="summary-note">Includes duplicates and policy flags</span></div>
+            <div className="summary-item savings"><span className="summary-label">Price variance flagged</span><strong>{formatMoney(potentialSavings)}</strong><span className="summary-note">Estimate from sample vendor history</span></div>
+            <div className="summary-item"><span className="summary-label">Drafts &amp; ready</span><strong>{ready} <small>{ready === 1 ? 'invoice' : 'invoices'}</small></strong><span className="summary-note">Payment still needs a person</span></div>
+          </section>}
 
-          {section === 'vendors' ? <VendorDirectory invoices={audits} onSelect={(id) => { setSelectedId(id); setSection('queue') }} />
+          {section === 'connections' ? <ConnectorsPage />
+            : section === 'agents' && selected ? <div className="agent-page-layout"><AgentOrchestration invoice={selected} /><SharedReviewContext invoice={selected} /></div>
+              : section === 'memory' && selected ? <div className="memory-page-layout"><InvoiceMemoryGraph invoice={selected} /><SharedReviewContext invoice={selected} /></div>
+                : section === 'overview' && selected ? <section className="overview-dashboard" aria-label="Demo overview">
+                  <div className="overview-primary-grid">
+                    <section className="queue-section overview-queue">
+                      <div className="section-heading"><div><h2>Recent invoices <span className="muted-count">{filtered.length}</span></h2><p>Choose an invoice to update the relationship graph and agent review.</p></div></div>
+                      <InvoiceQueue invoices={filtered} selectedId={selectedId} onSelect={setSelectedId} />
+                    </section>
+                    <InvoiceMemoryGraph invoice={selected} />
+                  </div>
+                  <AgentOrchestration invoice={selected} />
+                </section>
+              : section === 'vendors' ? <VendorDirectory invoices={audits} onSelect={(id) => { setSelectedId(id); setSection('queue') }} />
             : section === 'activity' ? <ActivityList invoices={audits} onSelect={(id) => { setSelectedId(id); setSection('queue') }} />
               : <section className="queue-section">
                 <div className="section-heading">
-                  <div><h2>{section === 'overview' ? 'Recently reviewed' : 'Invoice queue'} <span className="muted-count">{filtered.length}</span></h2><p>Select an invoice to review its evidence and agent handoffs.</p></div>
+                  <div><h2>{section === 'overview' ? 'Recent invoices' : 'Invoice queue'} <span className="muted-count">{filtered.length}</span></h2><p>Select a bill to inspect its line items, checks, and source records.</p></div>
                   <div className="filters">
                     <label className="select-wrap"><span className="sr-only">Filter by status</span><ArrowDownUp size={14} />
                       <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -174,7 +224,7 @@ function App() {
         </div>
       </main>
 
-      {selected && <InvoiceDetails invoice={selected} onPrepareDraft={() => prepareDraft(selected)} />}
+      {selected && hasDetailPanel && <InvoiceDetails invoice={selected} onPrepareDraft={() => prepareDraft(selected)} />}
       <input ref={inputRef} className="hidden-file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.json,.csv" onChange={(event) => void handleFile(event.target.files?.[0])} aria-label="Choose an invoice file" />
       {uploadOpen && <UploadInvoiceModal key={parsedInvoices ? `${parsedInvoices[0]?.fileName}:${parsedInvoices.length}` : 'empty'} isParsing={isParsing} parsedInvoices={parsedInvoices} error={uploadError} onClose={closeUpload} onChoose={chooseInvoiceFile} onConfirm={addParsedInvoices} />}
       {toast && <div className="toast" role="status"><FileCheck2 size={16} />{toast}</div>}
@@ -209,6 +259,54 @@ function ActivityList({ invoices, onSelect }: { invoices: InvoiceAudit[]; onSele
       <span className="activity-time">{index < 3 ? 'Just now' : 'Demo run'}</span>
     </button>)}</div>
   </section>
+}
+
+function OlgoLandingPage() {
+  return <div className="olgo-home">
+    <header className="olgo-header">
+      <a className="olgo-wordmark" href="/" aria-label="Olgo home"><span className="olgo-mark"><ShieldCheck size={18} /></span>Olgo</a>
+      <span className="olgo-header-label">FINANCE OPERATIONS, MADE REVIEWABLE</span>
+      <a className="olgo-header-link" href="/demo">Open demo <ArrowRight size={15} /></a>
+    </header>
+    <main>
+      <section className="olgo-hero">
+        <div className="olgo-hero-copy">
+          <h1>Every invoice decision, backed by evidence.</h1>
+          <p>InvoiceGuard connects invoice details to vendor history, purchase orders, and budgets. Teams see why a bill needs attention—and keep the payment decision with a person.</p>
+          <div className="olgo-hero-actions">
+            <a className="olgo-cta" href="/demo">Explore the demo <ArrowRight size={16} /></a>
+            <span>Fake records · no automatic payments</span>
+          </div>
+          <div className="olgo-trust-row"><span><ShieldCheck size={15} /> Human approval stays required</span><span><Network size={15} /> Memory links stay visible</span></div>
+        </div>
+        <div className="olgo-product-preview">
+          <div className="preview-window-top"><div className="preview-dots"><i /><i /><i /></div><span>OLGO / DEMO</span><span className="preview-window-status"><i /> Sample workspace</span></div>
+          <div className="preview-window-body">
+            <div className="preview-app-heading"><div><small>ACCOUNTS PAYABLE</small><strong>Invoice review</strong></div><span className="preview-upload">Upload invoice <ArrowRight size={13} /></span></div>
+            <div className="preview-metrics">
+              <div><small>Needs review</small><strong>3 <em>invoices</em></strong></div>
+              <div><small>Price variance</small><strong>$86.50</strong></div>
+              <div><small>Human gate</small><strong>Required</strong></div>
+            </div>
+            <div className="preview-lower">
+              <div className="preview-table"><div className="preview-table-head"><span>VENDOR</span><span>INVOICE</span><span>STATUS</span></div><div><strong>Acme Office Supply</strong><span>AOS-11847</span><em>Review</em></div><div><strong>Campus Catering</strong><span>CC-9031</span><em>Over budget</em></div></div>
+              <div className="preview-graph-card"><small>MEMORY GRAPH</small><div className="preview-graph-canvas">
+                <span className="preview-edge e-one" /><span className="preview-edge e-two" /><span className="preview-edge e-three" /><span className="preview-edge e-four" />
+                <span className="preview-node n-invoice">Invoice</span><span className="preview-node n-vendor">Vendor</span><span className="preview-node n-history">Past bill</span><span className="preview-node n-po">PO</span><span className="preview-node n-budget">Budget</span>
+              </div><span className="preview-graph-caption">Invoice → vendor memory → policy check</span></div>
+            </div>
+            <div className="preview-workflow"><span className="preview-workflow-dot active" /> Invoice reader <ArrowRight size={13} /><span className="preview-workflow-dot active" /> Vendor memory <ArrowRight size={13} /><span className="preview-workflow-dot active" /> Policy review <ArrowRight size={13} /><span className="preview-workflow-dot human" /> Human approval</div>
+          </div>
+        </div>
+      </section>
+      <section className="olgo-capabilities">
+        <div><span className="capability-number">01</span><h2>Evidence you can trace</h2><p>See the invoice, comparison record, and policy limit connected to each flag.</p></div>
+        <div><span className="capability-number">02</span><h2>Backend in view</h2><p>Inspect the workflow roles, memory graph, connectors, and each integration’s real status.</p></div>
+        <div><span className="capability-number">03</span><h2>People approve payments</h2><p>InvoiceGuard prepares the review. A human decides whether a payment should proceed.</p></div>
+      </section>
+    </main>
+    <footer className="olgo-footer"><span>OLGO</span><span>InvoiceGuard · Synthetic demo workspace</span><a href="/demo">Enter demo <ArrowRight size={14} /></a></footer>
+  </div>
 }
 
 export default App

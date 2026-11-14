@@ -1,4 +1,4 @@
-import type { BudgetRecord, HistoricalInvoice, InvoiceRecord, PurchaseOrderRecord } from '../domain/types'
+import type { BudgetRecord, HistoricalInvoice, InvoiceRecord, PurchaseOrderRecord } from '../domain/types.js'
 
 const officeSupplyItems = [
   { id: 'paper', description: 'Copy paper (case)', quantity: 2, unit: 'case', expectedUnitPrice: 54, billedUnitPrice: 67.5 },
