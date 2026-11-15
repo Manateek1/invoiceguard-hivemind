@@ -120,7 +120,7 @@ export function AgentOrchestration({ invoice }: { invoice: InvoiceAudit }) {
       <div className="backend-service-grid">
         <article className="backend-service"><span className="backend-service-icon local"><FileText size={16} /></span><div><strong>Invoice intake</strong><p>Browser PDF/text parser · upload stays local</p></div><span className="service-state local">Local</span></article>
         <article className="backend-service"><span className="backend-service-icon local"><ShieldCheck size={16} /></span><div><strong>Policy engine</strong><p>Duplicate, price, PO, and budget rules</p></div><span className="service-state local">Running</span></article>
-        <article className="backend-service"><span className="backend-service-icon"><Workflow size={16} /></span><div><strong>BAND runtime</strong><p>Dev room only · product agents not connected</p></div><span className="service-state muted">Separate</span></article>
+        <article className="backend-service"><span className="backend-service-icon"><Workflow size={16} /></span><div><strong>BAND runtime</strong><p>Four specialist roles · see live review above</p></div><span className="service-state muted">Runtime bridge</span></article>
         <article className="backend-service"><span className="backend-service-icon"><Database size={16} /></span><div><strong>Cognee Cloud</strong><p>{cogneeStatus?.missing?.length ? 'Missing ' + cogneeStatus.missing.join(', ') : cogneeStatus?.reachable ? 'Workspace dataset reachable' : 'Cloud graph not connected'}</p></div><span className={'service-state' + (cogneeStatus?.reachable && cogneeStatus.allowed ? ' live' : ' muted')}>{cogneeStatus?.reachable && cogneeStatus.allowed ? 'Connected' : 'Setup needed'}</span></article>
         <article className="backend-service"><span className="backend-service-icon"><Network size={16} /></span><div><strong>Superlinked SIE</strong><p>Optional retrieval · deterministic matching is active</p></div><span className="service-state muted">Optional</span></article>
         <article className="backend-service"><span className="backend-service-icon"><Search size={16} /></span><div><strong>Keenable research</strong><p>{researchStep?.source || 'Vendor research adapter is not configured'}</p></div><span className="service-state muted">Not connected</span></article>
@@ -134,6 +134,6 @@ export function AgentOrchestration({ invoice }: { invoice: InvoiceAudit }) {
       <div><strong>Human approval stays in control</strong><p>The workflow can prepare a payment draft. A person must review and approve it; this demo cannot send a payment.</p></div>
       <span className="approval-required">Approval required</span>
     </div>
-    <p className="orchestration-disclosure">This is a local visualization of the planned workflow. It does not call remote agents, Cognee, BAND, Superlinked, or Keenable.</p>
+    <p className="orchestration-disclosure">The sample replay above uses local rules. The Live agent review panel shows actual Band handoffs and Cognee recall when the runtime is connected.</p>
   </section></>
 }
