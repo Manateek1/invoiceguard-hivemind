@@ -139,7 +139,7 @@ function buildSampleGraph(invoice: InvoiceAudit) {
   const nodes: MemoryNode[] = [
     { id: 'invoice', kind: 'CURRENT INVOICE', title: invoice.invoiceNumber || 'Invoice', detail: 'Total · ' + formatMoney(invoice.amount), x: 450, y: 242 },
     { id: 'vendor', kind: 'VENDOR', title: invoice.vendor, detail: 'Matched from invoice', x: 155, y: 135 },
-    { id: 'history', kind: 'PAST INVOICE', title: past?.invoiceNumber ?? 'No prior invoice', detail: past ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(past.invoiceDate + 'T00:00:00')) + ' · ' + formatMoney(past.amount) : 'No matching demo history', x: 155, y: 350 },
+    { id: 'history', kind: 'PAST INVOICE', title: past?.invoiceNumber ?? 'No prior invoice', detail: past ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(past.invoiceDate + 'T00:00:00')) + ' · ' + formatMoney(past.amount) : 'No matching invoice history', x: 155, y: 350 },
     { id: 'purchase-order', kind: 'PURCHASE ORDER', title: invoice.purchaseOrder ?? 'No PO reference', detail: invoice.purchaseOrderTotal === undefined ? 'No linked approved total' : 'Approved · ' + formatMoney(invoice.purchaseOrderTotal), x: 745, y: 135 },
     { id: 'budget', kind: 'BUDGET', title: invoice.budgetName ?? 'No budget linked', detail: invoice.budgetLimit === undefined ? 'No per-invoice limit' : 'Limit · ' + formatMoney(invoice.budgetLimit), x: 745, y: 350 },
   ]
@@ -290,10 +290,10 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
         body: JSON.stringify({ action: 'seed-sample' }),
       })
       const payload = await response.json() as { message?: string; error?: string }
-      if (!response.ok) throw new Error(payload.error || 'Could not add the sample records to Cognee Cloud.')
+      if (!response.ok) throw new Error(payload.error || 'Could not sync the workspace records to Cognee Cloud.')
       await loadCloudGraph(payload.message || 'Invoice record records were sent to Cognee Cloud.')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not add the sample records to Cognee Cloud.')
+      setError(caught instanceof Error ? caught.message : 'Could not sync the workspace records to Cognee Cloud.')
       setBusy(null)
     }
   }
