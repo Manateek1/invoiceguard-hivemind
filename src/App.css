@@ -1036,6 +1036,86 @@
   line-height: 1.5;
 }
 
+.price-context-card {
+  display: grid;
+  gap: 11px;
+  padding: 13px;
+  margin-top: 14px;
+  background: #f7f9fb;
+  border: 1px solid #e1e8ed;
+  border-radius: 9px;
+}
+
+.price-context-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.price-context-icon {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #28786d;
+  background: #e5f2ee;
+  border-radius: 7px;
+}
+
+.price-context-heading h3 {
+  margin: 0;
+  color: #384b5c;
+  font-size: 12px;
+  font-weight: 730;
+}
+
+.price-context-heading p,
+.price-context-list article p {
+  margin: 3px 0 0;
+  color: #6d7b89;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.price-context-list {
+  display: grid;
+  gap: 9px;
+}
+
+.price-context-list article {
+  min-width: 0;
+  padding-top: 9px;
+  border-top: 1px solid #e1e8ed;
+}
+
+.price-context-row-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.price-context-row-heading strong {
+  color: #384b5c;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.price-context-row-heading span {
+  flex: 0 0 auto;
+  color: #a15342;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.price-context-source {
+  margin: 0;
+  color: #8a97a2;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 .no-findings {
   display: flex;
   align-items: center;
