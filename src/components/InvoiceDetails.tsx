@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, CircleAlert, ClipboardCheck, Copy, FileText, Info, ShieldCheck, Sparkles, X } from 'lucide-react'
+import { Check, CircleAlert, ClipboardCheck, Copy, FileText, Info, ShieldCheck, Sparkles, TrendingUp, X } from 'lucide-react'
 import type { InvoiceAudit } from '../domain/types'
 import { formatMoney } from '../lib/audit-engine'
 import { StatusBadge } from './StatusBadge'
@@ -73,6 +73,17 @@ export function InvoiceDetails({ invoice, onPrepareDraft, onClose }: { invoice: 
       </li>)}</ul> : <p className="no-findings"><Check size={15} /> No exceptions found in the current checks.</p>}
       <p className="evidence-footnote"><Info size={13} /> Price differences are estimates for human review, not guaranteed savings.</p>
     </section>
+    {priceFindings.length > 0 && <section className="price-context-card" aria-label="Historical price context">
+      <div className="price-context-heading">
+        <span className="price-context-icon"><TrendingUp size={15} /></span>
+        <div><h3>Price context</h3><p>Compared with prior vendor pricing</p></div>
+      </div>
+      <div className="price-context-list">{priceFindings.map((finding) => <article key={finding.id}>
+        <div className="price-context-row-heading"><strong>{finding.title}</strong>{finding.amount !== undefined && <span>{formatMoney(finding.amount)} variance</span>}</div>
+        <p>{finding.detail}</p>
+      </article>)}</div>
+      <p className="price-context-source">Based on invoice history and configured price expectations.</p>
+    </section>}
     {priceFindings.length > 0 && <section className="savings-suggestion" aria-label="Savings suggestion">
       <div className="suggestion-icon"><Sparkles size={14} /></div>
       <div className="suggestion-content">
