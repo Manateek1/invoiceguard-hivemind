@@ -184,7 +184,7 @@ export async function handleCognee(request: CogneeRequest, response: ServerRespo
           source: 'cognee-cloud',
           datasetName: settings.dataset,
           graph: { nodes: [], edges: [] },
-          message: 'No dataset exists yet. Write the synthetic sample memory to create it.',
+          message: 'No dataset exists yet. Sync workspace records to create it.',
         })
       }
       const datasetId = field(dataset, ['id', 'dataset_id', 'datasetId'])
@@ -219,10 +219,10 @@ export async function handleCognee(request: CogneeRequest, response: ServerRespo
     form.set('self_improvement', 'false')
     try {
       const result = await cogneeFetch(settings, '/api/v1/remember', { method: 'POST', body: form, signal: AbortSignal.timeout(60_000) })
-      if (!result.ok) throw new Error('Cognee Cloud rejected the synthetic sample records.')
-      return sendJson(response, 200, { message: 'Synthetic invoice, vendor, purchase-order, and budget records were written to Cognee Cloud.' })
+      if (!result.ok) throw new Error('Cognee Cloud rejected the workspace records.')
+      return sendJson(response, 200, { message: 'Workspace invoice, vendor, purchase-order, and budget records were synced to Cognee Cloud.' })
     } catch {
-      return sendJson(response, 502, { error: 'Cognee Cloud could not store the synthetic sample records. Check the configured dataset and service status.' })
+      return sendJson(response, 502, { error: 'Cognee Cloud could not store the workspace records. Check the configured dataset and service status.' })
     }
   }
 

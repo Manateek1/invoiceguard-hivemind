@@ -142,7 +142,7 @@ export function auditInvoice(record: InvoiceRecord, history: HistoricalInvoice[]
     findings,
     duplicateOf: duplicate?.previous.invoiceNumber,
     agentSteps: [
-      { name: 'Invoice reader', description: 'Extracted invoice fields and ' + (lineItems.length ? lineItems.length + ' line item' + (lineItems.length === 1 ? '' : 's') : 'no line items were detected') + '.', status: 'complete', source: invoice.source === 'demo' ? 'Demo fixture' : 'Local file parser' },
+      { name: 'Invoice reader', description: 'Extracted invoice fields and ' + (lineItems.length ? lineItems.length + ' line item' + (lineItems.length === 1 ? '' : 's') : 'no line items were detected') + '.', status: 'complete', source: invoice.source === 'demo' ? 'Workspace record' : 'Local file parser' },
       { name: 'Policy checker', description: 'Checked duplicates, purchase order, budget, and unit prices.', status: 'complete', source: 'Deterministic rules' },
       { name: 'Vendor memory', description: 'Compared this invoice with earlier vendor bills.', status: vendorHasHistory ? 'complete' : 'skipped', source: vendorHasHistory ? 'Synthetic vendor history' : 'No history found' },
       { name: 'Vendor research', description: 'Ready to look up current market evidence for flagged prices.', status: 'skipped', source: 'Keenable not connected' },

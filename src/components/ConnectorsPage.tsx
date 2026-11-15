@@ -39,8 +39,8 @@ export function ConnectorsPage({ onImport }: { onImport: (records: ParsedInvoice
       : cogneeStatus?.configured && !cogneeStatus.allowed
         ? cogneeStatus.message || 'Credentials are present, but external access is disabled for this workspace.'
         : cogneeStatus?.missing?.length
-        ? 'Server setup needed: ' + cogneeStatus.missing.join(', ') + '. The demo graph remains local until configured.'
-        : 'Cognee Cloud is not reachable from this environment. The demo graph remains local until the service is available.',
+        ? 'Server setup needed: ' + cogneeStatus.missing.join(', ') + '. Invoice relationships remain available locally until configured.'
+        : 'Cognee Cloud is not reachable from this environment. Invoice relationships remain available locally until the service is available.',
   })
   const selected = connectorCards.find((connector) => connector.id === selectedId)
 
