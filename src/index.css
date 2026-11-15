@@ -60,3 +60,5 @@ tr:focus-visible,
 svg {
   flex: 0 0 auto;
 }
+
+.live-review-panel{padding:24px;background:white;border:1px solid #dbe2e8;border-radius:12px;margin-bottom:24px}.live-review-panel pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 monospace;background:#f4f6f8;padding:16px;border-radius:8px;max-height:420px;overflow:auto}.live-review-panel details{padding:12px 0;border-top:1px solid #e8ecf0}.live-agent-roster{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.live-agent-roster span{font-size:12px;background:#edf4ef;padding:8px 12px;border-radius:6px}

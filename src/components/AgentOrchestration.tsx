@@ -1,3 +1,4 @@
+import { LiveAgentReview } from './LiveAgentReview'
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check, CircleDashed, Database, FileText, History, LoaderCircle, Network, PlugZap, Search, ShieldCheck, UserRoundCheck, Workflow } from 'lucide-react'
 import type { InvoiceAudit } from '../domain/types'
@@ -58,7 +59,7 @@ export function AgentOrchestration({ invoice }: { invoice: InvoiceAudit }) {
     setActiveStep(0)
   }
 
-  return <section className="orchestration-section" aria-label="Agent orchestration">
+  return <><LiveAgentReview invoice={invoice} /><section className="orchestration-section" aria-label="Agent orchestration">
     <div className="orchestration-header">
       <div>
         <h2>Agent orchestration</h2>
@@ -134,5 +135,5 @@ export function AgentOrchestration({ invoice }: { invoice: InvoiceAudit }) {
       <span className="approval-required">Approval required</span>
     </div>
     <p className="orchestration-disclosure">This is a local visualization of the planned workflow. It does not call remote agents, Cognee, BAND, Superlinked, or Keenable.</p>
-  </section>
+  </section></>
 }

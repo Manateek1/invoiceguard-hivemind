@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173/demo` for the review workspace. The Overview page shows the invoice queue, relationship graph, and visible sample workflow. **Agent activity** shows the local sample replay and backend status. These stages are labeled as simulated; this browser app is not connected to the product BAND agents.
+Open `http://localhost:5173/demo` for the review workspace. The Overview page shows the invoice queue, relationship graph, and visible sample workflow. **Agent activity** shows the local sample replay and backend status. The sample replay is labeled simulated. A separate Live agent review panel connects to the running Band team through a server-side bridge when configured.
 
 The app starts with synthetic invoices that show a duplicate, a budget overrun, a purchase-order overrun, a vendor price increase, and clean invoices. Use **Upload invoice** to try your own PDF, image, TXT, JSON, or CSV. CSV supports one invoice per row with `vendor`, `invoice_number`, and `amount` columns; `invoice_date`, `due_date`, `po_number`, `item_description`, `quantity`, `unit`, `unit_price`, and `line_total` are optional. JSON can include a `lineItems` array with `description`, `quantity`, `unit`, and `unitPrice` for each item. Confirm or correct the vendor, invoice number, date, amount, and purchase order before adding the invoice; enter the date if extraction missed it.
 
@@ -63,3 +63,9 @@ The local web demo uses deterministic rules and synthetic history. The separate 
 ## Safety and review
 
 All findings are estimates backed by the visible evidence. A flagged invoice can still be drafted for manual review, but a draft never authorizes or initiates payment. Do not put real invoice files, customer data, or credentials in commits or demo screenshots.
+
+## Live Band reviews
+
+Start the four-agent process with `cd agents/band && npm install && npm start`. Its ignored configuration must contain all four agent credentials. Set `BAND_RUNTIME_ROOM_ID` to the dedicated product room, and use the same random `BAND_BRIDGE_TOKEN` in the runtime and root server environment. Set root `BAND_RUNTIME_URL` to the bridge address (locally `http://127.0.0.1:8788`). Mention the coordinator once in the room after startup to establish the room tool context. Then use **Agent activity → Run live review**. The panel polls actual specialist reports and the final coordinator report; remote memory errors are shown explicitly.
+
+For this hackathon preview the runtime runs on Dillon's computer through a token-protected temporary tunnel. The computer, runtime, and tunnel must stay running. This is a live demo deployment, not durable production hosting. Deploy the runtime to a persistent service and replace the tunnel URL before relying on it beyond the demo. The Vercel branch environment contains only a dedicated synthetic Cognee dataset.
