@@ -1,6 +1,6 @@
 import { BookOpen, FileText, History, ShoppingCart, WalletCards } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { vendorHistory } from '../data/demo-invoices'
 import type { InvoiceAudit } from '../domain/types'
 import { formatMoney } from '../lib/audit-engine'
@@ -34,7 +34,7 @@ export function SharedReviewContext({ invoice, compact = false }: { invoice: Inv
       icon: FileText,
       label: 'Invoice',
       title: invoice.invoiceNumber || 'Invoice number not detected',
-      detail: (invoice.source === 'upload' ? 'Parsed in this browser' : 'Synthetic sample') + ' · ' + invoice.vendor + ' · ' + formatMoney(invoice.amount),
+      detail: (invoice.source === 'upload' ? 'Parsed in this browser' : 'Invoice record') + ' · ' + invoice.vendor + ' · ' + formatMoney(invoice.amount),
     },
     latest
       ? {
@@ -47,8 +47,8 @@ export function SharedReviewContext({ invoice, compact = false }: { invoice: Inv
       : {
           icon: History,
           label: 'Vendor history',
-          title: 'No prior sample invoice found',
-          detail: 'The demo has no local price baseline for this vendor.',
+          title: 'No prior invoice found',
+          detail: 'No price baseline is available for this vendor.',
           state: 'warning',
         },
     invoice.purchaseOrder
@@ -57,7 +57,7 @@ export function SharedReviewContext({ invoice, compact = false }: { invoice: Inv
           label: 'Purchase order',
           title: invoice.purchaseOrder + (invoice.purchaseOrderVendor ? ' · ' + invoice.purchaseOrderVendor : ''),
           detail: invoice.purchaseOrderTotal === undefined
-            ? 'No approved total is linked in the sample workspace.'
+            ? 'No approved total is linked in the workspace.'
             : 'Approved ' + formatMoney(invoice.purchaseOrderTotal) + ' · invoice ' + formatMoney(invoice.amount),
           state: invoice.purchaseOrderStatus === 'matched' && invoice.purchaseOrderTotal !== undefined && invoice.amount <= invoice.purchaseOrderTotal ? 'good' : 'warning',
         }
@@ -82,7 +82,7 @@ export function SharedReviewContext({ invoice, compact = false }: { invoice: Inv
           icon: WalletCards,
           label: 'Budget',
           title: 'No budget linked',
-          detail: 'No budget limit is available in the sample workspace.',
+          detail: 'No budget limit is available in the workspace.',
           state: 'warning',
         },
   ]
@@ -91,8 +91,8 @@ export function SharedReviewContext({ invoice, compact = false }: { invoice: Inv
     <div className="ai-context-heading">
       <span className="ai-context-icon"><BookOpen size={17} /></span>
       <div className="ai-context-title">
-        <div><h3>AI context</h3><span className="context-local-pill">Local demo · no live memory</span></div>
-        <p>{compact ? 'Records behind this review' : 'Structured records available to the sample workflow'}</p>
+        <div><h3>AI context</h3><span className="context-local-pill">Workspace records</span></div>
+        <p>{compact ? 'Records behind this review' : 'Records available for this review'}</p>
       </div>
     </div>
     <div className="context-source-list">
@@ -109,7 +109,7 @@ export function SharedReviewContext({ invoice, compact = false }: { invoice: Inv
       <div className="context-rules-icon"><BookOpen size={14} /></div>
       <p><strong>Review rules</strong><span>Exact invoice-number duplicates, similar bills within 14 days, unit-price increases above 10%, purchase-order totals, and per-invoice budget limits.</span></p>
     </div>}
-    <p className="context-disclosure">This invoice review uses synthetic history and deterministic checks. Cognee Cloud recall is a separate, manual action.</p>
+    <p className="context-disclosure">Review the linked records below or run an agent review to recall Cognee Cloud memory.</p>
   </section>
 }
 
@@ -193,7 +193,14 @@ function normalizeCloudGraph(value: unknown): { nodes: MemoryNode[]; edges: Memo
   }
   const rawNodes = toRecords(graph.nodes ?? graph.vertices)
   const rawEdges = toRecords(graph.edges ?? graph.relationships ?? graph.links)
-  const visibleRawNodes = rawNodes.slice(0, 9)
+  const edgeEnds = rawEdges.map(edge => [recordValue(edge, ['source', 'from', 'source_id']), recordValue(edge, ['target', 'to', 'target_id'])])
+  const degree = new Map<string, number>()
+  for (const [a, b] of edgeEnds) { degree.set(a, (degree.get(a) || 0) + 1); degree.set(b, (degree.get(b) || 0) + 1) }
+  const businessNodes = rawNodes.filter(node => !/documentchunk|textdocument|timestamp/i.test(recordValue(node, ['type', 'kind', 'node_type'])))
+  const ranked = [...businessNodes].sort((a,b) => (degree.get(String(b.id)) || 0) - (degree.get(String(a.id)) || 0))
+  const focus = String(ranked[0]?.id || '')
+  const neighbors = new Set(edgeEnds.filter(pair => pair.includes(focus)).flat())
+  const visibleRawNodes = [ranked[0], ...ranked.filter(node => String(node.id) !== focus && neighbors.has(String(node.id)))].filter(Boolean).slice(0, 7)
   const centerIndex = Math.max(0, visibleRawNodes.findIndex((node) => /invoice/i.test(recordValue(node, ['type', 'kind', 'node_type', 'label', 'name']))))
   const nodes = visibleRawNodes.map((value, index) => {
     const node = value && typeof value === 'object' ? value as Record<string, unknown> : {}
@@ -203,13 +210,13 @@ function normalizeCloudGraph(value: unknown): { nodes: MemoryNode[]; edges: Memo
     const title = recordValue(node, ['label', 'name', 'title']) || recordValue(properties, ['name', 'label', 'text']) || id
     const kind = recordValue(node, ['type', 'kind', 'node_type']) || 'MEMORY NODE'
     const detail = recordValue(properties, ['description', 'text', 'content', 'summary']) || 'Cognee Cloud dataset entity'
-    if (index === centerIndex) return { id, kind: kind.toUpperCase(), title: title.slice(0, 40), detail: detail.slice(0, 68), x: 450, y: 245 }
+    if (index === centerIndex) return { id, kind: kind.toUpperCase(), title, detail, x: 450, y: 245 }
     const ringIndex = index < centerIndex ? index : index - 1
     const angle = (Math.PI * 2 * ringIndex) / Math.max(visibleRawNodes.length - 1, 1) - Math.PI / 2
-    return { id, kind: kind.toUpperCase(), title: title.slice(0, 40), detail: detail.slice(0, 68), x: 450 + Math.cos(angle) * 275, y: 245 + Math.sin(angle) * 175 }
+    return { id, kind: kind.toUpperCase(), title, detail, x: 450 + Math.cos(angle) * 275, y: 245 + Math.sin(angle) * 175 }
   })
   const visibleIds = new Set(nodes.map((node) => node.id))
-  const edges = rawEdges.slice(0, 32).flatMap((value) => {
+  const edges = rawEdges.flatMap((value) => {
     const edge = value && typeof value === 'object' ? value as Record<string, unknown> : {}
     const from = recordValue(edge, ['source', 'from', 'start', 'source_id', 'sourceId', 'start_node', 'start_node_id'])
     const to = recordValue(edge, ['target', 'to', 'end', 'target_id', 'targetId', 'end_node', 'end_node_id'])
@@ -235,6 +242,7 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
   const selectedNode = graph.nodes.find((node) => node.id === selectedNodeId) ?? graph.nodes[0]
   const nodePositions = new Map(graph.nodes.map((node) => [node.id, node]))
 
+  const loadInitialGraph = useEffectEvent(() => { void loadCloudGraph() })
   useEffect(() => {
     let active = true
     fetch('/api/cognee?action=status')
@@ -242,7 +250,7 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
         if (!response.ok) throw new Error('Cognee status endpoint is unavailable.')
         return response.json() as Promise<CloudStatus>
       })
-      .then((status) => { if (active) setCloudStatus(status) })
+      .then((status) => { if (active) { setCloudStatus(status); if (status.configured && status.allowed && status.reachable) loadInitialGraph() } })
       .catch(() => { if (active) setCloudUnavailable(true) })
     return () => { active = false }
   }, [])
@@ -283,7 +291,7 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
       })
       const payload = await response.json() as { message?: string; error?: string }
       if (!response.ok) throw new Error(payload.error || 'Could not add the sample records to Cognee Cloud.')
-      await loadCloudGraph(payload.message || 'Synthetic sample records were sent to Cognee Cloud.')
+      await loadCloudGraph(payload.message || 'Invoice record records were sent to Cognee Cloud.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not add the sample records to Cognee Cloud.')
       setBusy(null)
@@ -342,7 +350,7 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
 
     <div className="graph-toolbar">
       <div className="graph-source-tabs" role="tablist" aria-label="Graph source">
-        <button type="button" role="tab" aria-selected={graphSource === 'sample'} className={graphSource === 'sample' ? 'selected' : ''} onClick={() => { setGraphSource('sample'); setSelectedNodeId('invoice') }}>Sample graph</button>
+        <button type="button" role="tab" aria-selected={graphSource === 'sample'} className={graphSource === 'sample' ? 'selected' : ''} onClick={() => { setGraphSource('sample'); setSelectedNodeId('invoice') }}>Invoice relationships</button>
         <button type="button" role="tab" aria-selected={graphSource === 'cognee'} className={graphSource === 'cognee' ? 'selected' : ''} onClick={() => setGraphSource('cognee')} disabled={!cloudGraph}>Cognee Cloud graph</button>
       </div>
       <div className="graph-actions">
@@ -350,14 +358,14 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
           {busy === 'load' ? 'Loading graph…' : 'Load Cloud graph'}
         </button>
         <button type="button" className="primary-button" onClick={() => void saveSampleMemory()} disabled={!cloudEnabled || busy !== null}>
-          {busy === 'seed' ? 'Writing sample memory…' : 'Write fake sample memory'}
+          {busy === 'seed' ? 'Syncing records…' : 'Sync workspace memory'}
         </button>
       </div>
     </div>
 
     {!cloudEnabled && <div className="cloud-setup-note">
       <strong>{cloudUnavailable ? 'Run the local API or open the Vercel preview.' : 'Cognee Cloud is not connected.'}</strong>
-      <span>{cloudStatus?.missing?.length ? 'Set ' + cloudStatus.missing.join(', ') + ' on the server to enable Cloud reads and writes.' : cloudStatus?.message || 'The graph below is generated from fake records in this browser. No Cloud graph is shown as live.'}</span>
+      <span>{cloudStatus?.missing?.length ? 'Set ' + cloudStatus.missing.join(', ') + ' on the server to enable Cloud reads and writes.' : cloudStatus?.message || 'Invoice relationships are available locally while Cloud memory connects.'}</span>
     </div>}
 
     <div className="graph-canvas-scroll">
@@ -372,11 +380,9 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
             const from = nodePositions.get(edge.from)
             const to = nodePositions.get(edge.to)
             if (!from || !to) return null
-            const midX = (from.x + to.x) / 2
-            const midY = (from.y + to.y) / 2
             return <g key={edge.from + edge.to + index}>
               <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} markerEnd="url(#graph-arrow)" />
-              {edge.label && <text x={midX} y={midY - 7}>{edge.label}</text>}
+              <title>{edge.label}</title>
             </g>
           })}
         </g>
@@ -396,11 +402,11 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
             <text className="graph-node-detail" x={node.x - 83} y={node.y + 25}>{node.detail.slice(0, 22)}</text>
           </g>)}
         </g>
-      </svg> : <div className="graph-empty"><strong>{graphSource === 'cognee' ? 'No records in the Cloud graph yet' : 'No graph records yet'}</strong><span>{cloudGraphMessage || 'Write the synthetic sample memory to Cognee Cloud, then load its dataset graph.'}</span></div>}
+      </svg> : <div className="graph-empty"><strong>{graphSource === 'cognee' ? 'No records in the Cloud graph yet' : 'No graph records yet'}</strong><span>{cloudGraphMessage || 'Sync workspace records, then reload the Cloud graph.'}</span></div>}
     </div>
 
     <div className="graph-footer">
-      <div className="graph-counts"><span><i className="graph-legend-dot invoice" />{graph.nodes.length} nodes</span><span><i className="graph-legend-dot relation" />{graph.edges.length} relationships</span><span>{graphSource === 'cognee' ? 'Source · Cognee Cloud' : 'Source · synthetic sample data'}</span></div>
+      <div className="graph-counts"><span><i className="graph-legend-dot invoice" />{graph.nodes.length} nodes</span><span><i className="graph-legend-dot relation" />{graph.edges.length} relationships</span><span>{graphSource === 'cognee' ? 'Source · Cognee Cloud' : 'Source · workspace records'}</span></div>
       {selectedNode && <div className="selected-node-detail"><span>{selectedNode.kind}</span><strong>{selectedNode.title}</strong><p>{selectedNode.detail}</p></div>}
     </div>
 
@@ -409,6 +415,6 @@ export function InvoiceMemoryGraph({ invoice }: { invoice: InvoiceAudit }) {
       <button type="button" className="text-action" onClick={() => void searchVendorMemory()} disabled={!cloudEnabled || busy !== null}>{busy === 'recall' ? 'Searching…' : 'Recall vendor memory'}</button>
     </div>
     {(notice || error) && <div className={error ? 'graph-feedback error' : 'graph-feedback'} role={error ? 'alert' : 'status'}>{error || notice}</div>}
-    <p className="graph-disclosure">The sample graph is local and synthetic. Cognee Cloud actions are disabled until a server API key, business dataset, and external-data approval are configured.</p>
+    <p className="graph-disclosure">Select any node to inspect its full record. Cloud memory is scoped to this workspace.</p>
   </section>
 }

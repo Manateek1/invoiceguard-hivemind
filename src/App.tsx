@@ -130,7 +130,7 @@ function InvoiceGuardWorkspace() {
   const pageCopy: Record<Section, { title: string; description: string }> = {
     overview: { title: 'Overview', description: 'A clear view of invoices waiting for a person to review.' },
     queue: { title: 'Invoice review', description: 'Check each invoice against vendor history, purchase orders, and budgets.' },
-    vendors: { title: 'Vendors', description: 'See the sample invoice history used to compare vendor pricing.' },
+    vendors: { title: 'Vendors', description: 'Vendor history and pricing in one place.' },
     activity: { title: 'Audit log', description: 'A record of checks and findings for each invoice in this session.' },
     agents: { title: 'Agent activity', description: 'See each review role, what it receives, and what it passes forward.' },
     memory: { title: 'Business memory graph', description: 'Inspect the links between invoices and the business records behind a review.' },
@@ -146,7 +146,7 @@ function InvoiceGuardWorkspace() {
         </a>
         <div className="workspace-switcher">
           <span className="workspace-avatar">NB</span>
-          <span><strong>Northstar Business</strong><small>Demo workspace</small></span>
+          <span><strong>Northstar Business</strong><small>Finance workspace</small></span>
           <ChevronRight size={14} />
         </div>
         <div className="workspace-label">WORKSPACE</div>
@@ -160,8 +160,8 @@ function InvoiceGuardWorkspace() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="memory-mark"><span className="memory-dot" />Local review context</div>
-          <p>This demo uses synthetic records. Check Connections for provider status.</p>
+          <div className="memory-mark"><span className="memory-dot" />Connected intelligence</div>
+          <p>Vendor history, policy checks, and linked business records.</p>
           <div className="sidebar-footer-note"><span>Human approval required</span><ShieldCheck size={14} /></div>
         </div>
       </aside>
@@ -170,7 +170,7 @@ function InvoiceGuardWorkspace() {
         <header className="topbar">
           <div className="breadcrumbs"><span>Northstar Business</span><ChevronRight size={14} /><strong>{sectionLabel[section]}</strong></div>
           <div className="topbar-right">
-            <span className="demo-pill"><span />{uploadCount ? `Demo + ${uploadCount} file${uploadCount > 1 ? 's' : ''}` : 'Demo data'}</span>
+            <span className="demo-pill"><span />{uploadCount ? `${uploadCount} uploaded file${uploadCount > 1 ? 's' : ''}` : 'Workspace active'}</span>
             <span className="user-avatar" aria-label="oalgo ai demo workspace">oa</span>
           </div>
         </header>
@@ -186,11 +186,11 @@ function InvoiceGuardWorkspace() {
 
           {(section === 'queue' || section === 'overview') && <section className="summary-row" aria-label="Invoice summary">
             <div className="summary-item"><span className="summary-label">Needs review</span><strong>{needsReview} <small>{needsReview === 1 ? 'invoice' : 'invoices'}</small></strong><span className="summary-note">Includes duplicates and policy flags</span></div>
-            <div className="summary-item savings"><span className="summary-label">Price variance flagged</span><strong>{formatMoney(potentialSavings)}</strong><span className="summary-note">Estimate from sample vendor history</span></div>
+            <div className="summary-item savings"><span className="summary-label">Price variance flagged</span><strong>{formatMoney(potentialSavings)}</strong><span className="summary-note">Compared with vendor history</span></div>
             <div className="summary-item"><span className="summary-label">Drafts &amp; ready</span><strong>{ready} <small>{ready === 1 ? 'invoice' : 'invoices'}</small></strong><span className="summary-note">Payment still needs a person</span></div>
           </section>}
 
-          {section === 'connections' ? <ConnectorsPage />
+          {section === 'connections' ? <ConnectorsPage onImport={addParsedInvoices} />
             : section === 'agents' && selected ? <div className="agent-page-layout"><AgentOrchestration invoice={selected} /><SharedReviewContext invoice={selected} /></div>
               : section === 'memory' && selected ? <div className="memory-page-layout"><InvoiceMemoryGraph invoice={selected} /><SharedReviewContext invoice={selected} /></div>
                 : section === 'overview' && selected ? <section className="overview-dashboard" aria-label="Demo overview">
@@ -236,7 +236,7 @@ function InvoiceGuardWorkspace() {
 function VendorDirectory({ invoices, onSelect }: { invoices: InvoiceAudit[]; onSelect: (id: string) => void }) {
   const vendors = [...new Set(invoices.map((invoice) => invoice.vendor))].sort()
   return <section className="directory-section">
-    <div className="section-heading"><div><h2>Vendor history <span className="muted-count">{vendors.length}</span></h2><p>Recent invoice patterns from synthetic demo records and this session.</p></div></div>
+    <div className="section-heading"><div><h2>Vendor history <span className="muted-count">{vendors.length}</span></h2><p>Recent invoice activity and historical vendor pricing.</p></div></div>
     <div className="vendor-list">{vendors.map((vendor) => {
       const records = invoices.filter((invoice) => invoice.vendor === vendor)
       const spend = records.reduce((sum, item) => sum + item.amount, 0)
@@ -267,7 +267,7 @@ function OalgoLandingPage() {
     <header className="olgo-header">
       <a className="olgo-wordmark" href="/" aria-label="oalgo ai home"><img src="/oalgo-ai-logo.png" alt="oalgo ai" /></a>
       <span className="olgo-header-label">FINANCE OPERATIONS, MADE REVIEWABLE</span>
-      <a className="olgo-header-link" href="/demo">Open demo <ArrowRight size={15} /></a>
+      <a className="olgo-header-link" href="/demo">Open workspace <ArrowRight size={15} /></a>
     </header>
     <main>
       <section className="olgo-hero">
@@ -275,13 +275,13 @@ function OalgoLandingPage() {
           <h1>Every invoice decision, backed by evidence.</h1>
           <p>InvoiceGuard connects invoice details to vendor history, purchase orders, and budgets. Teams see why a bill needs attention—and keep the payment decision with a person.</p>
           <div className="olgo-hero-actions">
-            <a className="olgo-cta" href="/demo">Explore the demo <ArrowRight size={16} /></a>
-            <span>Fake records · no automatic payments</span>
+            <a className="olgo-cta" href="/demo">Enter your workspace <ArrowRight size={16} /></a>
+            <span>Connected memory. Human decisions.</span>
           </div>
           <div className="olgo-trust-row"><span><ShieldCheck size={15} /> Human approval stays required</span><span><Network size={15} /> Memory links stay visible</span></div>
         </div>
         <div className="olgo-product-preview">
-          <div className="preview-window-top"><div className="preview-dots"><i /><i /><i /></div><span>oalgo ai / demo</span><span className="preview-window-status"><i /> Sample workspace</span></div>
+          <div className="preview-window-top"><div className="preview-dots"><i /><i /><i /></div><span>oalgo ai / finance</span><span className="preview-window-status"><i /> Connected workspace</span></div>
           <div className="preview-window-body">
             <div className="preview-app-heading"><div><small>ACCOUNTS PAYABLE</small><strong>Invoice review</strong></div><span className="preview-upload">Upload invoice <ArrowRight size={13} /></span></div>
             <div className="preview-metrics">
@@ -306,7 +306,7 @@ function OalgoLandingPage() {
         <div><span className="capability-number">03</span><h2>People approve payments</h2><p>InvoiceGuard prepares the review. A human decides whether a payment should proceed.</p></div>
       </section>
     </main>
-    <footer className="olgo-footer"><span>oalgo ai</span><span>InvoiceGuard · Synthetic demo workspace</span><a href="/demo">Enter demo <ArrowRight size={14} /></a></footer>
+    <footer className="olgo-footer"><span>oalgo ai</span><span>Intelligent accounts payable</span><a href="/demo">Open workspace <ArrowRight size={14} /></a></footer>
   </div>
 }
 

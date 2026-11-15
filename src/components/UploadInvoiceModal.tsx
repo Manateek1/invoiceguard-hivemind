@@ -117,7 +117,7 @@ export function UploadInvoiceModal({ isParsing, parsedInvoices, error, onClose, 
           <small>{isParsing ? 'Local OCR may take a few seconds.' : 'PDF, image, TXT, JSON, or CSV · up to 10 MB'}</small>
         </button>
         {error && <p className="upload-error" role="alert">{error}</p>}
-        <p className="privacy-note"><LockKeyhole size={14} /> The file stays on this device. Only confirmed fields enter the demo.</p>
+        <p className="privacy-note"><LockKeyhole size={14} /> The file stays on this device. Only confirmed fields enter your workspace.</p>
         <button className="text-button" onClick={onClose} disabled={isParsing} type="button">Cancel</button>
       </>}
     </section>

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { budgets, demoInvoices, purchaseOrders, vendorHistory } from '../src/data/demo-invoices.js'
+import { budgets, purchaseOrders, vendorHistory } from '../src/data/demo-invoices.js'
 
 type CogneeRequest = IncomingMessage & { body?: unknown }
 type CogneeConfig = { baseUrl: string; dataset: string; apiKey: string; loopback: boolean; configured: boolean; allowed: boolean; missing: string[] }
@@ -103,23 +103,7 @@ function sampleWorkspaceMemory() {
   return {
     workspace: 'InvoiceGuard demo',
     data_notice: 'All records below are synthetic sample data created for a product demo.',
-    invoices: demoInvoices.map((invoice) => ({
-      record_type: 'invoice_review_record',
-      vendor: invoice.vendor,
-      invoice_number: invoice.invoiceNumber,
-      invoice_date: invoice.invoiceDate,
-      amount: invoice.amount,
-      currency: invoice.currency,
-      purchase_order: invoice.purchaseOrder,
-      budget: invoice.budgetName,
-      line_items: invoice.lineItems.map((item) => ({
-        description: item.description,
-        quantity: item.quantity,
-        unit: item.unit,
-        billed_unit_price: item.billedUnitPrice,
-        prior_unit_price: item.expectedUnitPrice,
-      })),
-    })),
+    invoices: vendorHistory,
     vendor_history: vendorHistory,
     purchase_orders: purchaseOrders,
     budgets,

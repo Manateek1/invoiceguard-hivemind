@@ -35,6 +35,7 @@ function findDuplicate(invoice: InvoiceRecord, history: HistoricalInvoice[]) {
 function findPriceReference(invoice: InvoiceRecord, item: InvoiceLineItem, history: HistoricalInvoice[]) {
   const invoiceDate = invoice.invoiceDate
   const candidates = history
+    .filter((previous) => !('source' in previous))
     .filter((previous) => normalize(previous.vendor) === normalize(invoice.vendor))
     .filter((previous) => !invoiceDate || !previous.invoiceDate || previous.invoiceDate < invoiceDate)
     .flatMap((previous) => previous.lineItems
@@ -96,7 +97,7 @@ export function auditInvoice(record: InvoiceRecord, history: HistoricalInvoice[]
       kind: 'purchase-order',
       severity: 'high',
       title: 'Purchase order not found',
-      detail: 'No purchase order ' + invoice.purchaseOrder + ' exists in this demo workspace. Confirm the order before approval.',
+      detail: 'No purchase order ' + invoice.purchaseOrder + ' exists in this workspace. Confirm the order before approval.',
     })
   } else if (invoice.purchaseOrderStatus === 'vendor-mismatch') {
     findings.push({
