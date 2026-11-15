@@ -63,7 +63,7 @@ export function InvoiceDetails({ invoice, onPrepareDraft, onClose }: { invoice: 
       <ol className="agent-timeline">{invoice.agentSteps.map((step) => <li key={step.name} className={step.status}>
         <span className="timeline-marker">{step.status === 'complete' ? <Check size={12} /> : step.status === 'needs-review' ? <CircleAlert size={12} /> : <span />}</span>
         <div><strong>{step.name}</strong><p>{step.description}</p><small>{step.source}</small></div>
-        <span className="step-status">{step.status === 'complete' ? 'Done' : step.status === 'skipped' ? 'Not connected' : 'Review'}</span>
+        <span className="step-status">{step.status === 'complete' ? 'Done' : step.status === 'skipped' ? step.name === 'External market research' ? 'Optional' : 'Skipped' : 'Review'}</span>
       </li>)}</ol>
     </section>
     <section className="detail-section evidence-section">
