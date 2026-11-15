@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
+import { createServer } from 'node:http'
 import { Agent, GenericAdapter, loadAgentConfig } from '@band-ai/sdk'
 import { SIEClient } from '@superlinked/sie-sdk'
 import { parse as parseYaml } from 'yaml'
@@ -20,6 +21,8 @@ const handles = {
   research: process.env.BAND_RESEARCH_HANDLE || 'invoiceresearch',
 }
 const pendingAudits = new Map()
+const reviewRuns = new Map()
+const roomTools = new Map()
 const pendingExtractions = new Map()
 
 function cleanMessage(content) {
@@ -58,7 +61,7 @@ function normalizeInvoice(input) {
   if (!vendor || !invoiceNumber || !Number.isFinite(amount) || amount <= 0) {
     throw new Error('Invoice JSON must include a vendor, invoiceNumber, and positive amount.')
   }
-  const lineItems = Array.isArray(invoice.lineItems) ? invoice.lineItems.map((item, index) => ({
+  const lineItems = Array.isArray(invoice.lineItems ?? invoice.line_items) ? (invoice.lineItems ?? invoice.line_items).map((item, index) => ({
     id: String(item.id ?? `item-${index + 1}`),
     description: String(item.description ?? item.name ?? '').trim(),
     quantity: Number(item.quantity ?? 1),
@@ -263,6 +266,8 @@ function parseMemoryInvoices(text, vendor) {
   if (!parsed || typeof parsed !== 'object') return []
   const candidates = [parsed]
   if (parsed.invoice && typeof parsed.invoice === 'object') candidates.push(parsed.invoice)
+  if (Array.isArray(parsed.invoices)) candidates.push(...parsed.invoices)
+  if (Array.isArray(parsed.vendor_history)) candidates.push(...parsed.vendor_history)
   const matches = []
   for (const candidate of candidates) {
     try {
@@ -425,7 +430,9 @@ async function replyToPerson(tools, message, content) {
 
 async function startAudit(tools, message, invoice) {
   const id = `IG-${crypto.randomUUID().slice(0, 8)}`
-  pendingAudits.set(id, { id, invoice, requester: personMention(message)[0], memory: undefined, policy: undefined, research: undefined })
+  reviewRuns.set(id, { id, invoiceNumber: invoice.invoiceNumber, status: 'running', startedAt: new Date().toISOString(), events: [] })
+  if (reviewRuns.size > 100) reviewRuns.delete(reviewRuns.keys().next().value)
+  pendingAudits.set(id, { id, invoice, requester: message.senderId === agentIds.coordinator ? undefined : personMention(message)[0], memory: undefined, policy: undefined, research: undefined })
   const task = `IG_TASK ${id}\n${JSON.stringify({ invoice })}`
   await tools.sendMessage(task, [
     { id: agentIds.memory, handle: handles.memory },
@@ -454,7 +461,11 @@ async function handleCoordinator(message, tools) {
     const { id, payload } = taskResult
     const pending = pendingAudits.get(id)
     if (!pending || !payload || !['memory', 'policy', 'research'].includes(payload.role)) return
+    // A room participant cannot impersonate a specialist by pasting IG_RESULT.
+    if (message.senderId !== agentIds[payload.role]) return
     pending[payload.role] = payload.result
+    const run = reviewRuns.get(id)
+    run?.events.push({ role: payload.role, at: new Date().toISOString(), result: payload.result })
     if (payload.role === 'memory') {
       pending.invoice = mergeMemoryHistory(pending.invoice, payload.result?.historyRecords ?? [])
       const specialistPayload = JSON.stringify({ invoice: pending.invoice, memoryContext: payload.result?.context ?? '' })
@@ -464,7 +475,9 @@ async function handleCoordinator(message, tools) {
     }
     if (pending.policy && pending.research) {
       pendingAudits.delete(id)
-      await tools.sendMessage(responseFor(pending.invoice, pending.policy, pending.memory, pending.research), pending.requester ? [pending.requester] : [])
+      Object.assign(reviewRuns.get(id), { status: 'complete', report: responseFor(pending.invoice, pending.policy, pending.memory, pending.research), completedAt: new Date().toISOString() })
+      if (pending.requester) await tools.sendMessage(responseFor(pending.invoice, pending.policy, pending.memory, pending.research), [pending.requester])
+      else await tools.sendEvent(responseFor(pending.invoice, pending.policy, pending.memory, pending.research), 'thought')
     }
     return
   }
@@ -519,7 +532,7 @@ async function handleMemory(message, tools) {
   }
 
   const task = parseTask(content, 'IG_TASK')
-  if (!task) return
+  if (!task || message.senderId !== agentIds.coordinator) return
   try {
     const invoice = normalizeInvoice(task.payload.invoice)
     const result = await searchMemory(invoice)
@@ -532,7 +545,7 @@ async function handleMemory(message, tools) {
 
 async function handlePolicy(message, tools) {
   const task = parseTask(cleanMessage(message.content), 'IG_POLICY')
-  if (!task) return
+  if (!task || message.senderId !== agentIds.coordinator) return
   const invoice = normalizeInvoice(task.payload.invoice)
   const result = runPolicy(invoice)
   await tools.sendMessage(`IG_RESULT ${task.id}\n${JSON.stringify({ role: 'policy', result })}`, mention(agentIds.coordinator, handles.coordinator))
@@ -540,7 +553,7 @@ async function handlePolicy(message, tools) {
 
 async function handleResearch(message, tools) {
   const task = parseTask(cleanMessage(message.content), 'IG_RESEARCH')
-  if (!task) return
+  if (!task || message.senderId !== agentIds.coordinator) return
   try {
     const invoice = normalizeInvoice(task.payload.invoice)
     const result = await researchPrices(invoice)
@@ -566,9 +579,32 @@ const agentIds = Object.fromEntries(roles.map((role) => {
 }))
 
 const agents = roles.map((role) => Agent.create({
-  adapter: new GenericAdapter(async ({ message, tools }) => handlers[role](message, tools)),
+  adapter: new GenericAdapter(async ({ message, tools, roomId }) => {
+    if (role === 'coordinator') roomTools.set(roomId, tools)
+    return handlers[role](message, tools)
+  }),
   config: loadAgentConfig(configKeys[role], configPath),
 }))
 
 console.log(`Starting InvoiceGuard BAND team: ${roles.map((role) => `@${handles[role]}`).join(', ')}`)
+if (process.env.BAND_BRIDGE_TOKEN && process.env.BAND_RUNTIME_ROOM_ID) {
+  createServer(async (request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.setHeader('cache-control', 'no-store')
+    const send = (status, value) => { response.statusCode = status; response.end(JSON.stringify(value)) }
+    if (request.headers.authorization !== `Bearer ${process.env.BAND_BRIDGE_TOKEN}`) return send(401, { error: 'Unauthorized' })
+    const roomId = process.env.BAND_RUNTIME_ROOM_ID
+    const tools = roomTools.get(roomId)
+    if (request.method === 'GET') return send(200, { connected: Boolean(tools), agents: agents.map((agent, index) => ({ role: roles[index], state: agent.state })), runs: [...reviewRuns.values()].reverse() })
+    if (request.method !== 'POST') return send(405, { error: 'Method not allowed' })
+    if (!tools) return send(503, { error: 'Coordinator has not joined the configured runtime room yet.' })
+    try {
+      let body = ''
+      for await (const chunk of request) { body += chunk; if (body.length > 24000) throw new Error('Invoice too large') }
+      const invoice = normalizeInvoice(JSON.parse(body))
+      const result = await startAudit(tools, { senderId: agentIds.coordinator, senderName: handles.coordinator }, invoice)
+      send(202, { message: result })
+    } catch { send(400, { error: 'Could not start invoice review. Check invoice fields and Band room membership.' }) }
+  }).listen(Number(process.env.BAND_BRIDGE_PORT || 8788), '127.0.0.1')
+}
 await Promise.all(agents.map((agent) => agent.run()))

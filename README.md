@@ -1,6 +1,6 @@
-# InvoiceGuard
+# oalgo ai · InvoiceGuard
 
-InvoiceGuard is a Hive Mind hackathon MVP for business finance teams. Team members can review invoices in one workspace, compare vendor history, catch duplicates and policy exceptions, and prepare a payment draft for a human approver. It never submits a payment.
+oalgo ai is the demo shell for InvoiceGuard, a small-business accounts-payable review MVP. The landing page is `/`; the product demo is `/demo`. Review invoices against vendor history, purchase orders, and budgets, inspect the evidence graph, and prepare a payment draft for a human approver. The app never submits a payment.
 
 ## Run the demo
 
@@ -11,9 +11,26 @@ npm install
 npm run dev
 ```
 
-The app starts with synthetic invoices that show a duplicate, a budget overrun, a vendor price increase, and clean invoices. Use **Upload invoice** to try your own PDF, image, TXT, JSON, or CSV. CSV supports one invoice per row with `vendor`, `invoice_number`, and `amount` columns; `invoice_date`, `due_date`, and `po_number` are optional. Confirm or correct the extracted fields before they enter the review queue.
+Open `http://localhost:5173/demo` for the review workspace. The Overview page shows the invoice queue, Cloud relationship graph, and live specialist review. **Agent activity** shows actual Band reports when connected. **Connections → Open invoice inbox** demonstrates Gmail invoice intake with a fixture mailbox; importing an attachment adds its extracted fields to the review queue without accessing personal email. Cognee supports Gmail ingestion through its Google OAuth connector; that OAuth connection is not enabled here.
 
-PDF text extraction and image OCR run in the browser. The original file is not uploaded or persisted; parsed fields stay in the current page session. Refreshing the page resets the local demo. Demo invoice data is synthetic and must not be presented as actual savings.
+The app starts with synthetic invoices that show a duplicate, a budget overrun, a purchase-order overrun, a vendor price increase, and clean invoices. Use **Upload invoice** to try your own PDF, image, TXT, JSON, or CSV. CSV supports one invoice per row with `vendor`, `invoice_number`, and `amount` columns; `invoice_date`, `due_date`, `po_number`, `item_description`, `quantity`, `unit`, `unit_price`, and `line_total` are optional. JSON can include a `lineItems` array with `description`, `quantity`, `unit`, and `unitPrice` for each item. Confirm or correct the vendor, invoice number, date, amount, and purchase order before adding the invoice; enter the date if extraction missed it.
+
+PDF text extraction and image OCR run in the browser. Recognized line items are compared with earlier vendor prices; unmatched items remain visible without an invented baseline. Known purchase orders link to the demo workspace's approved totals and budgets, while unknown or mismatched orders are flagged for review. The original file is not uploaded or persisted; parsed fields stay in the current page session. Refreshing the page resets the local demo. Demo invoice data is synthetic and must not be presented as actual savings.
+
+## Cognee Cloud memory graph
+
+The `/api/cognee` server route supports Cognee Cloud status, dataset graph reads, sample-memory writes, and an explicit vendor-memory search. Cognee's API key stays on the server. The graph initially shown in the app is generated locally from fake data; the UI switches to a Cloud graph only after a successful Cloud response.
+
+To try the Cloud actions locally, create a root `.env.local` file and set:
+
+```dotenv
+COGNEE_BASE_URL=https://api.cognee.ai
+COGNEE_API_KEY=your-server-side-key
+COGNEE_DATASET_NAME=invoiceguard-demo
+ALLOW_EXTERNAL_FINANCE_DATA=true
+```
+
+Restart Vite after changing the environment. Cloud reads and writes remain disabled unless the dataset and key are present and `ALLOW_EXTERNAL_FINANCE_DATA=true`. **Use a dataset containing only synthetic demo records.** This demo has no login or workspace authorization, so do not connect a real business dataset or put real invoices in the public preview. Uploaded files are parsed locally in the browser; only the whitelisted vendor, invoice number, and line-item descriptions/units are used to build a Cognee search query after the user clicks **Recall vendor memory**.
 
 ## Product flow
 
@@ -23,7 +40,7 @@ PDF text extraction and image OCR run in the browser. The original file is not u
 4. Add current vendor-price research when the Keenable service is configured.
 5. Prepare a payment draft and leave the final decision with a human.
 
-The multi-member product is scoped to a company workspace. Its shared memory should contain approved vendor, policy, and price history for that workspace; it should not mix data between companies. The current local demo has no authentication or remote database yet.
+The multi-member product is scoped to a company workspace. Its shared memory should contain approved vendor, policy, and price history for that workspace; it should not mix data between companies. The current browser demo has no authentication or remote business database. Cognee Cloud is an optional, manually enabled integration and is not preconfigured in this repository.
 
 ## Sponsor roles
 
@@ -32,7 +49,7 @@ The multi-member product is scoped to a company workspace. Its shared memory sho
 - **Keenable:** live web evidence for vendor-price research and savings suggestions.
 - **BAND:** agent coordination in the InvoiceGuard workflow, plus a separate room for the two developers' coding agents.
 
-The local web demo uses deterministic rules and synthetic history. The separate BAND product runtime has sponsor adapters and setup instructions in [`agents/band/README.md`](./agents/band/README.md); providers stay off until configured with approved credentials. Keep developer-room credentials separate from the product agent credentials. Never put secrets in the repo or send them in Messages.
+The local web demo uses deterministic rules and synthetic history. The separate BAND product runtime has sponsor adapters and setup instructions in [`agents/band/README.md`](./agents/band/README.md); it runs separately from this browser UI. Providers stay off until configured with approved credentials. Keep developer-room credentials separate from the product agent credentials. Never put secrets in the repo or send them in Messages.
 
 ## Team workflow
 
@@ -46,3 +63,11 @@ The local web demo uses deterministic rules and synthetic history. The separate 
 ## Safety and review
 
 All findings are estimates backed by the visible evidence. A flagged invoice can still be drafted for manual review, but a draft never authorizes or initiates payment. Do not put real invoice files, customer data, or credentials in commits or demo screenshots.
+
+## Live Band reviews
+
+Start the four-agent process with `cd agents/band && npm install && npm start`. Its ignored configuration must contain all four agent credentials. Set `BAND_RUNTIME_ROOM_ID` to the dedicated product room, and use the same random `BAND_BRIDGE_TOKEN` in the runtime and root server environment. Set root `BAND_RUNTIME_URL` to the bridge address (locally `http://127.0.0.1:8788`). Mention the coordinator once in the room after startup to establish the room tool context. Then use **Agent activity → Run live review**. The panel polls actual specialist reports and the final coordinator report; remote memory errors are shown explicitly.
+
+For this hackathon preview the runtime runs on Dillon's computer through a token-protected temporary tunnel. The computer, runtime, and tunnel must stay running. This is a live demo deployment, not durable production hosting. Deploy the runtime to a persistent service and replace the tunnel URL before relying on it beyond the demo. The Vercel branch environment contains only a dedicated synthetic Cognee dataset.
+
+Historical memory contains only prior vendor invoices, budgets, and purchase orders. Incoming queue invoices are excluded from the seed to prevent self-matching duplicate flags. Pending uploads do not become approved price baselines.
